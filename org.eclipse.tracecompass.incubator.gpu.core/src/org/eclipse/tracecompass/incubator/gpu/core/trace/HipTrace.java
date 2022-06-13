@@ -1,7 +1,10 @@
 package org.eclipse.tracecompass.incubator.gpu.core.trace;
 
 import java.nio.ByteBuffer;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.Map;
 
 import org.eclipse.core.internal.runtime.Activator;
@@ -30,7 +33,9 @@ public abstract class HipTrace extends TmfTrace implements ITmfPersistentlyIndex
             return new Status(IStatus.ERROR, Activator.PLUGIN_ID, "Path is not a file"); //$NON-NLS-1$
         }
 
-        String[] header = parseHeader(f);
+        if(!parseHeader(f)) {
+            return new Status(IStatus.ERROR, Activator.PLUGIN_ID, "Could not parse trace header"); //$NON-NLS-1$
+        }
     }
 
     @Override
@@ -95,7 +100,56 @@ public abstract class HipTrace extends TmfTrace implements ITmfPersistentlyIndex
 
     // ----- GPU Counters specific methods ----- //
 
-    private String[] parseHeader(File f) {
+    private boolean parseHeader(File f) {
+        String header = new String();
+        try (BufferedReader br = new BufferedReader(new FileReader(f));) {
+            header = br.readLine();
+        } catch (IOException e) {
+        }
+        fOffset = header.length() + 1;
 
+        String[] tokens = header.split(",", HEADER_TOKENS); //$NON-NLS-1$
+
+        if(tokens.length < HEADER_TOKENS) {
+            return false;
+        }
+
+        if(tokens[0] != HIPTRACE_NAME) {
+            return false;
+        }
+
+        kernelName = tokens[1];
+
+        try {
+            instrSize = Integer.parseInt(tokens[2]);
+        } catch (NumberFormatException e) {
+            return false;
+        }
+
+        try {
+            stamp = Long.parseLong(tokens[3]);
+        } catch (NumberFormatException e) {
+            return false;
+        }
+
+        try {
+            sizeofCounter = Short.parseShort(tokens[4]);
+        } catch (NumberFormatException e) {
+            return false;
+        }
+
+
+        return true;
     }
+
+    private int fOffset;
+
+    private String kernelName;
+    private int instrSize;
+    private long stamp;
+    private short sizeofCounter;
+    private KernelConfiguration configuration;
+
+    private static final int HEADER_TOKENS = 5;
+    private static final String HIPTRACE_NAME = "hiptrace";
 }
