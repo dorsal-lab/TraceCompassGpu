@@ -23,6 +23,9 @@ import com.google.gson.JsonParser;
 public class KernelConfiguration {
     public KernelConfiguration() {}
 
+    /**
+     * @param filename Kernel launch configuration path
+     */
     public KernelConfiguration(String filename) {
         IStatus status = parse(filename);
         if(status.getCode() == IStatus.ERROR) {
@@ -30,6 +33,10 @@ public class KernelConfiguration {
         }
     }
 
+    /**
+     * @param filename Kernel launch configuration path
+     * @return Status
+     */
     public IStatus parse(String filename) {
         File f = new File(filename);
         if(!f.exists()) {
@@ -55,17 +62,21 @@ public class KernelConfiguration {
 
         JsonObject obj = element.getAsJsonObject();
 
-        kernelName = obj.get("name").getAsString();
-        bblocks = obj.get("bblocks").getAsInt();
+        kernelName = obj.get("name").getAsString(); //$NON-NLS-1$
+        bblocks = obj.get("bblocks").getAsInt(); //$NON-NLS-1$
 
-        JsonElement geometry = obj.get("geometry");
-        threads = parseDim3(geometry.getAsJsonObject().get("threads"));
-        blocks = parseDim3(geometry.getAsJsonObject().get("blocks"));
+        JsonElement geometry = obj.get("geometry"); //$NON-NLS-1$
+        threads = parseDim3(geometry.getAsJsonObject().get("threads")); //$NON-NLS-1$
+        blocks = parseDim3(geometry.getAsJsonObject().get("blocks")); //$NON-NLS-1$
 
 
         return new Status(IStatus.OK, Activator.PLUGIN_ID, null);
     }
 
+    /**
+     * @param el
+     * @return
+     */
     public int[] parseDim3(JsonElement el) {
         if(!el.isJsonObject()) {
             return new int[] {0, 0, 0};
@@ -73,27 +84,39 @@ public class KernelConfiguration {
 
         JsonObject obj = el.getAsJsonObject();
 
-        int x = obj.get("x").getAsInt();
-        int y = obj.get("y").getAsInt();
-        int z = obj.get("z").getAsInt();
+        int x = obj.get("x").getAsInt(); //$NON-NLS-1$
+        int y = obj.get("y").getAsInt(); //$NON-NLS-1$
+        int z = obj.get("z").getAsInt(); //$NON-NLS-1$
 
         return new int[] {x, y, z};
     }
 
+    /**
+     * @return Kernel Name
+     */
     public String getKernelName() {
         return kernelName;
     }
 
+    /**
+     * @return Thread dimensions
+     */
     public int[] getThreads() {
         return threads;
     }
 
-    public int getBblocks() {
-        return bblocks;
-    }
-
+    /**
+     * @return Blocks dimension
+     */
     public int[] getBlocks() {
         return blocks;
+    }
+
+    /**
+     * @return Number of instrumented basic blocks
+     */
+    public int getBblocks() {
+        return bblocks;
     }
 
     private String kernelName;
