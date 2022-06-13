@@ -51,7 +51,7 @@ public abstract class HipTrace extends TmfTrace implements ITmfPersistentlyIndex
             return new Status(IStatus.ERROR, Activator.PLUGIN_ID, "Wrong data size, different from header"); //$NON-NLS-1$
         }
 
-        configuration = new KernelConfiguration(path);
+        configuration = new KernelConfiguration(path + ".json"); //$NON-NLS-1$
 
 
         return new TraceValidationStatus(100, Activator.PLUGIN_ID);
