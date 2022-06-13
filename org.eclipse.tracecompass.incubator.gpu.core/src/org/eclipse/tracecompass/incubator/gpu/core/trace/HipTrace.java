@@ -1,6 +1,8 @@
 package org.eclipse.tracecompass.incubator.gpu.core.trace;
 
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -17,6 +19,7 @@ import org.eclipse.tracecompass.tmf.core.project.model.ITmfPropertiesProvider;
 import org.eclipse.tracecompass.tmf.core.trace.ITmfContext;
 import org.eclipse.tracecompass.tmf.core.trace.ITmfTraceKnownSize;
 import org.eclipse.tracecompass.tmf.core.trace.TmfTrace;
+import org.eclipse.tracecompass.tmf.core.trace.TraceValidationStatus;
 import org.eclipse.tracecompass.tmf.core.trace.indexer.ITmfPersistentlyIndexable;
 import org.eclipse.tracecompass.tmf.core.trace.location.ITmfLocation;
 
@@ -36,6 +39,22 @@ public abstract class HipTrace extends TmfTrace implements ITmfPersistentlyIndex
         if(!parseHeader(f)) {
             return new Status(IStatus.ERROR, Activator.PLUGIN_ID, "Could not parse trace header"); //$NON-NLS-1$
         }
+
+        long traceSize;
+        try {
+            traceSize = Files.size(Path.of(path));
+        } catch (IOException e) { // Should not happen
+            return new Status(IStatus.ERROR, Activator.PLUGIN_ID, "Could not query trace size"); //$NON-NLS-1$
+        }
+
+        if((traceSize - fOffset) != instrSize * sizeofCounter) {
+            return new Status(IStatus.ERROR, Activator.PLUGIN_ID, "Wrong data size, different from header"); //$NON-NLS-1$
+        }
+
+        configuration = new KernelConfiguration(path);
+
+
+        return new TraceValidationStatus(100, Activator.PLUGIN_ID);
     }
 
     @Override
@@ -140,6 +159,10 @@ public abstract class HipTrace extends TmfTrace implements ITmfPersistentlyIndex
 
 
         return true;
+    }
+
+    public KernelConfiguration getConfiguration() {
+        return configuration;
     }
 
     private int fOffset;
