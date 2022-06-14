@@ -78,7 +78,8 @@ public abstract class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
         }
 
         try {
-            fFileChannel = new FileInputStream(fFile).getChannel();
+            stream = new FileInputStream(fFile);
+            fFileChannel = stream.getChannel();
         } catch (IOException e) {
             throw new TmfTraceException("Could not create reading channel"); //$NON-NLS-1$
         }
@@ -119,14 +120,15 @@ public abstract class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
                 event = new TmfEvent(this, pos, TmfTimestamp.fromMicros(stamp), new TmfEventType(HIPTRACE_NAME, content), content);
 
             } catch (IOException e) {
-                return null;
             }
         }
 
-        updateAttributes(context, event);
-        context.setLocation(getCurrentLocation());
-        context.increaseRank();
-        fCurrentEvent = event;
+        if(event != null) {
+            updateAttributes(context, event);
+            context.setLocation(getCurrentLocation());
+            context.increaseRank();
+            fCurrentEvent = event;
+        }
 
         return event;
     }
@@ -229,6 +231,16 @@ public abstract class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
         fMappedByteBuffer = fFileChannel.map(MapMode.READ_ONLY, position, size);
     }
 
+    @Override
+    public synchronized void dispose() {
+        if(stream != null) {
+            try {
+                stream.close();
+            } catch (IOException e) {
+            }
+        }
+    }
+
     // ----- Getters ----- //
 
     public KernelConfiguration getConfiguration() {
@@ -246,6 +258,7 @@ public abstract class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
     // ----- Trace file location ----- //
 
     private File fFile;
+    private FileInputStream stream;
     private long fSize;
     private FileChannel fFileChannel;
     private TmfLongLocation fCurrent;
