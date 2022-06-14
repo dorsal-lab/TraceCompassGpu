@@ -21,42 +21,44 @@ import com.google.gson.JsonParser;
  *
  */
 public class KernelConfiguration {
-    public KernelConfiguration() {}
+    public KernelConfiguration() {
+    }
 
     /**
-     * @param filename Kernel launch configuration path
+     * @param filename
+     *            Kernel launch configuration path
      */
     public KernelConfiguration(String filename) {
         IStatus status = parse(filename);
-        if(status.getCode() == IStatus.ERROR) {
+        if (status.getCode() == IStatus.ERROR) {
             throw new IOError(new Exception());
         }
     }
 
     /**
-     * @param filename Kernel launch configuration path
+     * @param filename
+     *            Kernel launch configuration path
      * @return Status
      */
     public IStatus parse(String filename) {
         File f = new File(filename);
-        if(!f.exists()) {
+        if (!f.exists()) {
             return new Status(IStatus.ERROR, Activator.PLUGIN_ID, "File does not exist"); //$NON-NLS-1$
         }
 
-        if(!f.isFile()) {
+        if (!f.isFile()) {
             return new Status(IStatus.ERROR, Activator.PLUGIN_ID, "Path is not a file"); //$NON-NLS-1$
         }
 
         String json;
         try {
             json = Files.readString(Path.of(filename));
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             return new Status(IStatus.ERROR, Activator.PLUGIN_ID, "Could not read file " + filename); //$NON-NLS-1$
         }
 
         JsonElement element = JsonParser.parseString(json);
-        if(!element.isJsonObject()) {
+        if (!element.isJsonObject()) {
             return new Status(IStatus.ERROR, Activator.PLUGIN_ID, "Invalid JSON file " + filename); //$NON-NLS-1$
         }
 
@@ -69,7 +71,6 @@ public class KernelConfiguration {
         threads = parseDim3(geometry.getAsJsonObject().get("threads")); //$NON-NLS-1$
         blocks = parseDim3(geometry.getAsJsonObject().get("blocks")); //$NON-NLS-1$
 
-
         return new Status(IStatus.OK, Activator.PLUGIN_ID, null);
     }
 
@@ -78,8 +79,8 @@ public class KernelConfiguration {
      * @return
      */
     public int[] parseDim3(JsonElement el) {
-        if(!el.isJsonObject()) {
-            return new int[] {0, 0, 0};
+        if (!el.isJsonObject()) {
+            return new int[] { 0, 0, 0 };
         }
 
         JsonObject obj = el.getAsJsonObject();
@@ -88,7 +89,7 @@ public class KernelConfiguration {
         int y = obj.get("y").getAsInt(); //$NON-NLS-1$
         int z = obj.get("z").getAsInt(); //$NON-NLS-1$
 
-        return new int[] {x, y, z};
+        return new int[] { x, y, z };
     }
 
     /**

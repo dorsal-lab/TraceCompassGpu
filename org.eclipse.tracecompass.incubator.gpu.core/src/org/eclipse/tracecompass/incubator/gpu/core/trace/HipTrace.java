@@ -38,15 +38,15 @@ public abstract class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
     @Override
     public IStatus validate(IProject project, String path) {
         File f = new File(path);
-        if(!f.exists()) {
+        if (!f.exists()) {
             return new Status(IStatus.ERROR, Activator.PLUGIN_ID, "File does not exist"); //$NON-NLS-1$
         }
 
-        if(!f.isFile()) {
+        if (!f.isFile()) {
             return new Status(IStatus.ERROR, Activator.PLUGIN_ID, "Path is not a file"); //$NON-NLS-1$
         }
 
-        if(!parseHeader(f)) {
+        if (!parseHeader(f)) {
             return new Status(IStatus.ERROR, Activator.PLUGIN_ID, "Could not parse trace header"); //$NON-NLS-1$
         }
 
@@ -57,12 +57,11 @@ public abstract class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
             return new Status(IStatus.ERROR, Activator.PLUGIN_ID, "Could not query trace size"); //$NON-NLS-1$
         }
 
-        if((traceSize - fOffset) != instrSize * sizeofCounter) {
+        if ((traceSize - fOffset) != instrSize * sizeofCounter) {
             return new Status(IStatus.ERROR, Activator.PLUGIN_ID, "Wrong data size, different from header"); //$NON-NLS-1$
         }
 
         configuration = new KernelConfiguration(path + ".json"); //$NON-NLS-1$
-
 
         return new TraceValidationStatus(100, Activator.PLUGIN_ID);
     }
@@ -73,7 +72,7 @@ public abstract class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
         fFile = new File(path);
         fSize = fFile.length();
 
-        if(!parseHeader(fFile)) {
+        if (!parseHeader(fFile)) {
             throw new TmfTraceException("Invalid trace header"); //$NON-NLS-1$
         }
 
@@ -90,21 +89,21 @@ public abstract class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
         TmfEvent event = null;
         long pos = context.getRank();
 
-        if(pos < instrSize) {
+        if (pos < instrSize) {
             try {
-                if(fMappedByteBuffer.position() + sizeofCounter > fMappedByteBuffer.limit()) {
+                if (fMappedByteBuffer.position() + sizeofCounter > fMappedByteBuffer.limit()) {
                     seek(pos);
                 }
 
                 long counter = 0;
-                for(int i = 0; i < sizeofCounter; ++i) {
+                for (int i = 0; i < sizeofCounter; ++i) {
                     byte b = fMappedByteBuffer.get();
                     counter += b << (i * 8);
                 }
 
                 long bblock = pos % configuration.getBblocks();
                 long thread = pos % (configuration.getBblocks() * configuration.getThreads()[0]);
-                long block = pos %(configuration.getBblocks() * configuration.getThreads()[0] * configuration.getBlocks()[0]);
+                long block = pos % (configuration.getBblocks() * configuration.getThreads()[0] * configuration.getBlocks()[0]);
 
                 final TmfEventField[] fields = {
                         new TmfEventField("counter", counter, null), //$NON-NLS-1$
@@ -114,8 +113,7 @@ public abstract class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
                 };
 
                 final TmfEventField content = new TmfEventField(
-                        ITmfEventField.ROOT_FIELD_ID, null, fields
-                );
+                        ITmfEventField.ROOT_FIELD_ID, null, fields);
 
                 event = new TmfEvent(this, pos, TmfTimestamp.fromMicros(stamp), new TmfEventType(HIPTRACE_NAME, content), content);
 
@@ -123,7 +121,7 @@ public abstract class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
             }
         }
 
-        if(event != null) {
+        if (event != null) {
             updateAttributes(context, event);
             context.setLocation(getCurrentLocation());
             context.increaseRank();
@@ -147,7 +145,7 @@ public abstract class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
     @Override
     public ITmfContext seekEvent(ITmfLocation location) {
         TmfLongLocation newLoc = (TmfLongLocation) location;
-        if(location == null) {
+        if (location == null) {
             newLoc = new TmfLongLocation(0L);
         }
 
@@ -193,11 +191,11 @@ public abstract class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
 
         String[] tokens = header.split(",", HEADER_TOKENS); //$NON-NLS-1$
 
-        if(tokens.length < HEADER_TOKENS) {
+        if (tokens.length < HEADER_TOKENS) {
             return false;
         }
 
-        if(tokens[0] != HIPTRACE_NAME) {
+        if (tokens[0] != HIPTRACE_NAME) {
             return false;
         }
 
@@ -221,7 +219,6 @@ public abstract class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
             return false;
         }
 
-
         return true;
     }
 
@@ -233,7 +230,7 @@ public abstract class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
 
     @Override
     public synchronized void dispose() {
-        if(stream != null) {
+        if (stream != null) {
             try {
                 stream.close();
             } catch (IOException e) {
@@ -267,8 +264,7 @@ public abstract class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
 
     private TmfEvent fCurrentEvent;
 
-
-    // -----  Trace information  ----- //
+    // ----- Trace information ----- //
 
     private String kernelName;
     private int instrSize;
