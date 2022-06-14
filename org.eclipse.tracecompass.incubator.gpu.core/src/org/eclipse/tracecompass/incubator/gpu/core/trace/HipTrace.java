@@ -11,11 +11,11 @@ import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 
-import org.eclipse.core.internal.runtime.Activator;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.tracecompass.incubator.internal.gpu.core.Activator;
 import org.eclipse.tracecompass.tmf.core.event.*;
 import org.eclipse.tracecompass.tmf.core.exceptions.TmfTraceException;
 import org.eclipse.tracecompass.tmf.core.timestamp.TmfTimestamp;
@@ -33,7 +33,11 @@ import org.eclipse.tracecompass.tmf.core.trace.location.TmfLongLocation;
  * @author Sébastien Darche <sebastien.darche@polymtl.ca>
  *
  */
-public abstract class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
+public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
+
+    public HipTrace() {
+        super();
+    }
 
     @Override
     public IStatus validate(IProject project, String path) {

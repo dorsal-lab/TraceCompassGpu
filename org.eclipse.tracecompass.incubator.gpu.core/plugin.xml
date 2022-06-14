@@ -4,12 +4,17 @@
    <extension
          point="org.eclipse.linuxtools.tmf.core.tracetype">
       <type
+            category="org.eclipse.tracecompass.incubator.gpu.core.gputrace"
             event_type="org.eclipse.tracecompass.tmf.core.event.TmfEvent"
             id="org.eclipse.tracecompass.incubator.gpu.core.hiptrace"
             isDirectory="false"
             name="Hiptrace"
             trace_type="org.eclipse.tracecompass.incubator.gpu.core.trace.HipTrace">
       </type>
+      <category
+            id="org.eclipse.tracecompass.incubator.gpu.core.gputrace"
+            name="GPU Trace">
+      </category>
    </extension>
 
 </plugin>
