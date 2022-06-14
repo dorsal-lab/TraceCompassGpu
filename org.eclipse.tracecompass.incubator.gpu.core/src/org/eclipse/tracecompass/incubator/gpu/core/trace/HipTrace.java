@@ -1,6 +1,5 @@
 package org.eclipse.tracecompass.incubator.gpu.core.trace;
 
-import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
@@ -22,9 +21,9 @@ import org.eclipse.tracecompass.tmf.core.exceptions.TmfTraceException;
 import org.eclipse.tracecompass.tmf.core.timestamp.TmfTimestamp;
 import org.eclipse.tracecompass.tmf.core.trace.ITmfContext;
 import org.eclipse.tracecompass.tmf.core.trace.ITmfTraceKnownSize;
+import org.eclipse.tracecompass.tmf.core.trace.TmfContext;
 import org.eclipse.tracecompass.tmf.core.trace.TmfTrace;
 import org.eclipse.tracecompass.tmf.core.trace.TraceValidationStatus;
-import org.eclipse.tracecompass.tmf.core.trace.indexer.ITmfPersistentlyIndexable;
 import org.eclipse.tracecompass.tmf.core.trace.location.ITmfLocation;
 import org.eclipse.tracecompass.tmf.core.trace.location.TmfLongLocation;
 
@@ -34,7 +33,7 @@ import org.eclipse.tracecompass.tmf.core.trace.location.TmfLongLocation;
  * @author Sébastien Darche <sebastien.darche@polymtl.ca>
  *
  */
-public abstract class HipTrace extends TmfTrace implements ITmfPersistentlyIndexable, ITmfTraceKnownSize {
+public abstract class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
 
     @Override
     public IStatus validate(IProject project, String path) {
@@ -139,44 +138,40 @@ public abstract class HipTrace extends TmfTrace implements ITmfPersistentlyIndex
 
     @Override
     public double getLocationRatio(ITmfLocation location) {
-        // TODO Auto-generated method stub
-        return 0;
+        TmfLongLocation loc = (TmfLongLocation) location;
+        return loc.getLocationInfo().doubleValue() / instrSize;
     }
 
     @Override
     public ITmfContext seekEvent(ITmfLocation location) {
-        // TODO Auto-generated method stub
-        return null;
+        TmfLongLocation newLoc = (TmfLongLocation) location;
+        if(location == null) {
+            newLoc = new TmfLongLocation(0L);
+        }
+
+        try {
+            seek(newLoc.getLocationInfo());
+        } catch (IOException e) {
+        }
+
+        return new TmfContext(newLoc, newLoc.getLocationInfo());
     }
 
     @Override
     public ITmfContext seekEvent(double ratio) {
-        // TODO Auto-generated method stub
-        return null;
+        TmfLongLocation loc = new TmfLongLocation((long) ratio * instrSize);
+
+        return seekEvent(loc);
     }
 
     @Override
     public int size() {
-        // TODO Auto-generated method stub
-        return 0;
+        return (int) fSize;
     }
 
     @Override
     public int progress() {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
-    @Override
-    public ITmfLocation restoreLocation(ByteBuffer bufferIn) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public int getCheckpointSize() {
-        // TODO Auto-generated method stub
-        return 0;
+        return fCurrent.getLocationInfo().intValue();
     }
 
     @Override
