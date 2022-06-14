@@ -1,29 +1,39 @@
 package org.eclipse.tracecompass.incubator.gpu.core.trace;
 
 import java.nio.ByteBuffer;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileChannel.MapMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.Map;
 
 import org.eclipse.core.internal.runtime.Activator;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.IStatus;
-import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.tracecompass.tmf.core.event.ITmfEvent;
-import org.eclipse.tracecompass.tmf.core.project.model.ITmfPropertiesProvider;
+import org.eclipse.tracecompass.tmf.core.exceptions.TmfTraceException;
 import org.eclipse.tracecompass.tmf.core.trace.ITmfContext;
 import org.eclipse.tracecompass.tmf.core.trace.ITmfTraceKnownSize;
 import org.eclipse.tracecompass.tmf.core.trace.TmfTrace;
 import org.eclipse.tracecompass.tmf.core.trace.TraceValidationStatus;
 import org.eclipse.tracecompass.tmf.core.trace.indexer.ITmfPersistentlyIndexable;
 import org.eclipse.tracecompass.tmf.core.trace.location.ITmfLocation;
+import org.eclipse.tracecompass.tmf.core.trace.location.TmfLongLocation;
 
-public abstract class HipTrace extends TmfTrace implements ITmfPersistentlyIndexable, ITmfPropertiesProvider, ITmfTraceKnownSize {
+/**
+ * @brief Trace generated with the hip-analyzer tool
+ *
+ * @author Sébastien Darche <sebastien.darche@polymtl.ca>
+ *
+ */
+public abstract class HipTrace extends TmfTrace implements ITmfPersistentlyIndexable, ITmfTraceKnownSize {
 
     @Override
     public IStatus validate(IProject project, String path) {
@@ -58,9 +68,27 @@ public abstract class HipTrace extends TmfTrace implements ITmfPersistentlyIndex
     }
 
     @Override
+    public void initTrace(IResource resource, String path, Class<? extends ITmfEvent> type) throws TmfTraceException {
+        super.initTrace(resource, path, type);
+        fFile = new File(path);
+        fSize = fFile.length();
+
+        if(!parseHeader(fFile)) {
+            throw new TmfTraceException("Invalid trace header"); //$NON-NLS-1$
+        }
+
+        try {
+            fFileChannel = new FileInputStream(fFile).getChannel();
+        } catch (IOException e) {
+            throw new TmfTraceException("Could not create reading channel"); //$NON-NLS-1$
+        }
+
+
+    }
+
+    @Override
     public ITmfLocation getCurrentLocation() {
-        // TODO Auto-generated method stub
-        return null;
+        return fCurrent;
     }
 
     @Override
@@ -91,12 +119,6 @@ public abstract class HipTrace extends TmfTrace implements ITmfPersistentlyIndex
     public int progress() {
         // TODO Auto-generated method stub
         return 0;
-    }
-
-    @Override
-    public @NonNull Map<@NonNull String, @NonNull String> getProperties() {
-        // TODO Auto-generated method stub
-        return null;
     }
 
     @Override
@@ -161,11 +183,37 @@ public abstract class HipTrace extends TmfTrace implements ITmfPersistentlyIndex
         return true;
     }
 
+    private void seek(long rank) throws IOException {
+        final long position = fOffset + rank * sizeofCounter;
+        int size = Math.min((int) (fFileChannel.size() - position), BUFFER_SIZE);
+        fMappedFileBuffer = fFileChannel.map(MapMode.READ_ONLY, position, size);
+    }
+
+    // ----- Getters ----- //
+
     public KernelConfiguration getConfiguration() {
         return configuration;
     }
 
+    public String getKernelName() {
+        return kernelName;
+    }
+
+    public long getStamp() {
+        return stamp;
+    }
+
+    // ----- Trace file location ----- //
+
+    private File fFile;
+    private long fSize;
+    private FileChannel fFileChannel;
+    private TmfLongLocation fCurrent;
+    private MappedByteBuffer fMappedByteBuffer;
     private int fOffset;
+
+
+    // -----  Trace information  ----- //
 
     private String kernelName;
     private int instrSize;
@@ -173,6 +221,18 @@ public abstract class HipTrace extends TmfTrace implements ITmfPersistentlyIndex
     private short sizeofCounter;
     private KernelConfiguration configuration;
 
+    /**
+     * @brief Number of expected tokens in header
+     */
     private static final int HEADER_TOKENS = 5;
-    private static final String HIPTRACE_NAME = "hiptrace";
+
+    /**
+     * @brief Expected file header, identifying a hiptrace
+     */
+    private static final String HIPTRACE_NAME = "hiptrace"; //$NON-NLS-1$
+
+    /**
+     * @brief Trace buffered read size
+     */
+    private static final int BUFFER_SIZE = 4096;
 }
