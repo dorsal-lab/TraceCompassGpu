@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.ui.views">
+      <view
+            class="org.eclipse.tracecompass.incubator.gpu.ui.views.GpuRooflineView"
+            id="org.eclipse.tracecompass.incubator.gpu.ui.roofline"
+            name="GPU Roofline"
+            restorable="true">
+      </view>
+   </extension>
+
+</plugin>
