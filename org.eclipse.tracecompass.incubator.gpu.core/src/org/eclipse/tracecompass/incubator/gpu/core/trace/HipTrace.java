@@ -17,8 +17,9 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
-import org.eclipse.tracecompass.tmf.core.event.ITmfEvent;
+import org.eclipse.tracecompass.tmf.core.event.*;
 import org.eclipse.tracecompass.tmf.core.exceptions.TmfTraceException;
+import org.eclipse.tracecompass.tmf.core.timestamp.TmfTimestamp;
 import org.eclipse.tracecompass.tmf.core.trace.ITmfContext;
 import org.eclipse.tracecompass.tmf.core.trace.ITmfTraceKnownSize;
 import org.eclipse.tracecompass.tmf.core.trace.TmfTrace;
@@ -82,8 +83,53 @@ public abstract class HipTrace extends TmfTrace implements ITmfPersistentlyIndex
         } catch (IOException e) {
             throw new TmfTraceException("Could not create reading channel"); //$NON-NLS-1$
         }
+    }
 
+    @Override
+    public synchronized ITmfEvent getNext(ITmfContext context) {
+        TmfEvent event = null;
+        long pos = context.getRank();
 
+        if(pos < instrSize) {
+            try {
+                if(fMappedByteBuffer.position() + sizeofCounter > fMappedByteBuffer.limit()) {
+                    seek(pos);
+                }
+
+                long counter = 0;
+                for(int i = 0; i < sizeofCounter; ++i) {
+                    byte b = fMappedByteBuffer.get();
+                    counter += b << (i * 8);
+                }
+
+                long bblock = pos % configuration.getBblocks();
+                long thread = pos % (configuration.getBblocks() * configuration.getThreads()[0]);
+                long block = pos %(configuration.getBblocks() * configuration.getThreads()[0] * configuration.getBlocks()[0]);
+
+                final TmfEventField[] fields = {
+                        new TmfEventField("counter", counter, null), //$NON-NLS-1$
+                        new TmfEventField("bblock", bblock, null), //$NON-NLS-1$
+                        new TmfEventField("thread", thread, null), //$NON-NLS-1$
+                        new TmfEventField("block", block, null) //$NON-NLS-1$
+                };
+
+                final TmfEventField content = new TmfEventField(
+                        ITmfEventField.ROOT_FIELD_ID, null, fields
+                );
+
+                event = new TmfEvent(this, pos, TmfTimestamp.fromMicros(stamp), new TmfEventType(HIPTRACE_NAME, content), content);
+
+            } catch (IOException e) {
+                return null;
+            }
+        }
+
+        updateAttributes(context, event);
+        context.setLocation(getCurrentLocation());
+        context.increaseRank();
+        fCurrentEvent = event;
+
+        return event;
     }
 
     @Override
@@ -135,8 +181,7 @@ public abstract class HipTrace extends TmfTrace implements ITmfPersistentlyIndex
 
     @Override
     public ITmfEvent parseEvent(ITmfContext context) {
-        // TODO Auto-generated method stub
-        return null;
+        return fCurrentEvent;
     }
 
     // ----- GPU Counters specific methods ----- //
@@ -186,7 +231,7 @@ public abstract class HipTrace extends TmfTrace implements ITmfPersistentlyIndex
     private void seek(long rank) throws IOException {
         final long position = fOffset + rank * sizeofCounter;
         int size = Math.min((int) (fFileChannel.size() - position), BUFFER_SIZE);
-        fMappedFileBuffer = fFileChannel.map(MapMode.READ_ONLY, position, size);
+        fMappedByteBuffer = fFileChannel.map(MapMode.READ_ONLY, position, size);
     }
 
     // ----- Getters ----- //
@@ -211,6 +256,8 @@ public abstract class HipTrace extends TmfTrace implements ITmfPersistentlyIndex
     private TmfLongLocation fCurrent;
     private MappedByteBuffer fMappedByteBuffer;
     private int fOffset;
+
+    private TmfEvent fCurrentEvent;
 
 
     // -----  Trace information  ----- //
