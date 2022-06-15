@@ -26,7 +26,8 @@
          point="org.eclipse.linuxtools.tmf.core.analysis">
       <module
             analysis_module="org.eclipse.tracecompass.incubator.gpu.analysis.GpuRooflineAnalysis"
-            id="org.eclipse.tracecompass.incubator.gpu.core.roofline"
+            automatic="false"
+            id="org.eclipse.tracecompass.incubator.gpu.core.GpuRooflineAnalysis"
             name="GPU roofline model">
          <tracetype
                applies="true"
@@ -41,7 +42,7 @@
          </parameter>
       </module>
       <output
-            class="org.eclipse.tracecompass.incubator.gpu.ui.GpuRooflineView"
+            class="org.eclipse.tracecompass.incubator.gpu.ui.views.GpuRooflineView"
             id="org.eclipse.tracecompass.incubator.gpu.ui.roofline">
          <analysisModuleClass
                class="org.eclipse.tracecompass.incubator.gpu.analysis.GpuRooflineAnalysis">

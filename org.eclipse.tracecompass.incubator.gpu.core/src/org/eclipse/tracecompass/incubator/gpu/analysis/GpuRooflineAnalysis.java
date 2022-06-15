@@ -12,12 +12,16 @@ import org.eclipse.tracecompass.tmf.core.analysis.requirements.*;
 import org.eclipse.tracecompass.tmf.core.analysis.requirements.TmfAbstractAnalysisRequirement.PriorityLevel;
 import org.eclipse.tracecompass.tmf.core.exceptions.TmfAnalysisException;
 import org.eclipse.tracecompass.tmf.core.trace.ITmfTrace;
+import org.eclipse.tracecompass.tmf.ui.analysis.TmfAnalysisViewOutput;
 
 /**
  * @author Sébastien Darche <sebastien.darche@polymtl.ca>
  *
  */
 public class GpuRooflineAnalysis extends TmfAbstractAnalysisModule {
+
+    public static final String ID = "org.eclipse.tracecompass.incubator.gpu.core.analysis.GpuRooflineAnalysis"; //$NON-NLS-1$
+    public static final String ROOFLINE_VIEW_ID = "org.eclipse.tracecompass.incubator.gpu.ui.roofline"; //$NON-NLS-1$
 
     public static final String PARAM_HIP_ANALYZER = "hip_analyzer_path"; //$NON-NLS-1$
     public static final String PARAM_GPU_INFO = "gpu_info_path"; //$NON-NLS-1$
@@ -32,6 +36,7 @@ public class GpuRooflineAnalysis extends TmfAbstractAnalysisModule {
         );
 
         TmfAbstractAnalysisRequirement eventsReq = new TmfAnalysisEventRequirement(requiredEvents, PriorityLevel.MANDATORY);
+        registerOutput(new TmfAnalysisViewOutput(ROOFLINE_VIEW_ID));
 
         return Set.of(eventsReq);
     }
@@ -41,7 +46,7 @@ public class GpuRooflineAnalysis extends TmfAbstractAnalysisModule {
         String hipAnalyzerPath = (String) getParameter(PARAM_HIP_ANALYZER);
         String gpuInfoPath = (String) getParameter(PARAM_GPU_INFO);
 
-        return false;
+        return true;
     }
 
     @Override

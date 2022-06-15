@@ -3,11 +3,8 @@
  */
 package org.eclipse.tracecompass.incubator.gpu.ui.views;
 
-import org.eclipse.tracecompass.tmf.core.event.ITmfEvent;
-import org.eclipse.tracecompass.tmf.core.request.ITmfEventRequest;
-import org.eclipse.tracecompass.tmf.core.request.TmfEventRequest;
+import org.eclipse.tracecompass.incubator.gpu.analysis.GpuRooflineAnalysis;
 import org.eclipse.tracecompass.tmf.core.signal.*;
-import org.eclipse.tracecompass.tmf.core.timestamp.TmfTimeRange;
 import org.eclipse.tracecompass.tmf.core.trace.ITmfTrace;
 import org.eclipse.tracecompass.tmf.ui.views.TmfView;
 import org.eclipse.swt.SWT;
@@ -25,7 +22,7 @@ public class GpuRooflineView extends TmfView {
     private static final String Y_AXIS = "FLOP / s"; //$NON-NLS-1$
     private static final String X_AXIS = "Arithmetic Intensity (FLOP / Byte)"; //$NON-NLS-1$
 
-    private static final String VIEW_ID = "org.eclipse.tracecompass.incubator.gpu.ui.roofline"; //$NON-NLS-1$
+    private static final String VIEW_ID = GpuRooflineAnalysis.ROOFLINE_VIEW_ID;
 
     private Chart chart;
 

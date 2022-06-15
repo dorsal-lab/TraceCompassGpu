@@ -13,7 +13,8 @@ package org.eclipse.tracecompass.incubator.gpu.core.trace;
 
 import org.eclipse.tracecompass.tmf.core.trace.experiment.TmfExperiment;
 
-/** @class GpuExperiment
+/**
+ * @class GpuExperiment
  * @brief Trace
  *
  * @author Sébastien Darche <sebastien.darche@polymtl.ca>
