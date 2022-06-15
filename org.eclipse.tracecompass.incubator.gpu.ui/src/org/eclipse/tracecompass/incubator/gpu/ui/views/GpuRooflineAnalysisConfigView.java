@@ -101,8 +101,9 @@ public class GpuRooflineAnalysisConfigView extends Dialog {
     @Override
     protected void buttonPressed(int buttonId) {
         if (buttonId == Window.OK) {
-
+            // Probably update some stuff here
         }
+        super.buttonPressed(buttonId);
     }
 
     public String getHipAnalyzerPath() {

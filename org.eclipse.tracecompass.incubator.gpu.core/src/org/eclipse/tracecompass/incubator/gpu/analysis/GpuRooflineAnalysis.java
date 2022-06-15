@@ -20,7 +20,7 @@ import org.eclipse.tracecompass.tmf.ui.analysis.TmfAnalysisViewOutput;
  */
 public class GpuRooflineAnalysis extends TmfAbstractAnalysisModule {
 
-    public static final String ID = "org.eclipse.tracecompass.incubator.gpu.core.analysis.GpuRooflineAnalysis"; //$NON-NLS-1$
+    public static final String ID = "org.eclipse.tracecompass.incubator.gpu.core.GpuRooflineAnalysis"; //$NON-NLS-1$
     public static final String ROOFLINE_VIEW_ID = "org.eclipse.tracecompass.incubator.gpu.ui.roofline"; //$NON-NLS-1$
 
     public static final String PARAM_HIP_ANALYZER = "hip_analyzer_path"; //$NON-NLS-1$
@@ -39,6 +39,11 @@ public class GpuRooflineAnalysis extends TmfAbstractAnalysisModule {
         registerOutput(new TmfAnalysisViewOutput(ROOFLINE_VIEW_ID));
 
         return Set.of(eventsReq);
+    }
+
+    @Override
+    public @NonNull String getId() {
+        return ID;
     }
 
     @Override

@@ -41,13 +41,6 @@
                name="gpu_info_path">
          </parameter>
       </module>
-      <output
-            class="org.eclipse.tracecompass.incubator.gpu.ui.views.GpuRooflineView"
-            id="org.eclipse.tracecompass.incubator.gpu.ui.roofline">
-         <analysisModuleClass
-               class="org.eclipse.tracecompass.incubator.gpu.analysis.GpuRooflineAnalysis">
-         </analysisModuleClass>
-      </output>
    </extension>
 
 </plugin>
