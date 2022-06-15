@@ -22,5 +22,31 @@
             name="GPU Experiment">
       </experiment>
    </extension>
+   <extension
+         point="org.eclipse.linuxtools.tmf.core.analysis">
+      <module
+            analysis_module="org.eclipse.tracecompass.incubator.gpu.analysis.GpuRooflineAnalysis"
+            id="org.eclipse.tracecompass.incubator.gpu.core.roofline"
+            name="GPU roofline model">
+         <tracetype
+               applies="true"
+               class="org.eclipse.tracecompass.incubator.gpu.core.trace.GpuExperiment"
+               id="org.eclipse.tracecompass.incubator.gpu.core.gpuexperiment">
+         </tracetype>
+         <parameter
+               name="hip_analyzer_path">
+         </parameter>
+         <parameter
+               name="gpu_info_path">
+         </parameter>
+      </module>
+      <output
+            class="org.eclipse.tracecompass.incubator.gpu.ui.GpuRooflineView"
+            id="org.eclipse.tracecompass.incubator.gpu.ui.roofline">
+         <analysisModuleClass
+               class="org.eclipse.tracecompass.incubator.gpu.analysis.GpuRooflineAnalysis">
+         </analysisModuleClass>
+      </output>
+   </extension>
 
 </plugin>

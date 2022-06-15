@@ -11,12 +11,16 @@ import org.eclipse.tracecompass.tmf.core.analysis.TmfAbstractAnalysisModule;
 import org.eclipse.tracecompass.tmf.core.analysis.requirements.*;
 import org.eclipse.tracecompass.tmf.core.analysis.requirements.TmfAbstractAnalysisRequirement.PriorityLevel;
 import org.eclipse.tracecompass.tmf.core.exceptions.TmfAnalysisException;
+import org.eclipse.tracecompass.tmf.core.trace.ITmfTrace;
 
 /**
  * @author Sébastien Darche <sebastien.darche@polymtl.ca>
  *
  */
 public class GpuRooflineAnalysis extends TmfAbstractAnalysisModule {
+
+    public static final String PARAM_HIP_ANALYZER = "hip_analyzer_path";  //$NON-NLS-1$
+    public static final String PARAM_GPU_INFO = "gpu_info_path";  //$NON-NLS-1$
 
     @SuppressWarnings("null")
     @Override
@@ -34,14 +38,21 @@ public class GpuRooflineAnalysis extends TmfAbstractAnalysisModule {
 
     @Override
     protected boolean executeAnalysis(@NonNull IProgressMonitor monitor) throws TmfAnalysisException {
-        // TODO Auto-generated method stub
+        String hipAnalyzerPath = (String) getParameter(PARAM_HIP_ANALYZER);
+        String gpuInfoPath = (String) getParameter(PARAM_GPU_INFO);
+
+
         return false;
     }
 
     @Override
     protected void canceling() {
-        // TODO Auto-generated method stub
+        return;
+    }
 
+    @Override
+    @NonNull public String getHelpText(@NonNull ITmfTrace trace) {
+        return "Compute Roofline model for this GPU experiment"; //$NON-NLS-1$
     }
 
 }
