@@ -15,6 +15,12 @@
             id="org.eclipse.tracecompass.incubator.gpu.core.gputrace"
             name="GPU Trace">
       </category>
+      <experiment
+            category="org.eclipse.tracecompass.incubator.gpu.core.gputrace"
+            experiment_type="org.eclipse.tracecompass.incubator.gpu.core.trace.GpuExperiment"
+            id="org.eclipse.tracecompass.incubator.gpu.core.gpuexperiment"
+            name="GPU Experiment">
+      </experiment>
    </extension>
 
 </plugin>
