@@ -19,8 +19,8 @@ import org.eclipse.tracecompass.tmf.core.trace.ITmfTrace;
  */
 public class GpuRooflineAnalysis extends TmfAbstractAnalysisModule {
 
-    public static final String PARAM_HIP_ANALYZER = "hip_analyzer_path";  //$NON-NLS-1$
-    public static final String PARAM_GPU_INFO = "gpu_info_path";  //$NON-NLS-1$
+    public static final String PARAM_HIP_ANALYZER = "hip_analyzer_path"; //$NON-NLS-1$
+    public static final String PARAM_GPU_INFO = "gpu_info_path"; //$NON-NLS-1$
 
     @SuppressWarnings("null")
     @Override
@@ -41,7 +41,6 @@ public class GpuRooflineAnalysis extends TmfAbstractAnalysisModule {
         String hipAnalyzerPath = (String) getParameter(PARAM_HIP_ANALYZER);
         String gpuInfoPath = (String) getParameter(PARAM_GPU_INFO);
 
-
         return false;
     }
 
@@ -51,7 +50,8 @@ public class GpuRooflineAnalysis extends TmfAbstractAnalysisModule {
     }
 
     @Override
-    @NonNull public String getHelpText(@NonNull ITmfTrace trace) {
+    @NonNull
+    public String getHelpText(@NonNull ITmfTrace trace) {
         return "Compute Roofline model for this GPU experiment"; //$NON-NLS-1$
     }
 
