@@ -42,7 +42,13 @@ public class GpuRooflineAnalysisConfigView extends Dialog {
     public GpuRooflineAnalysisConfigView(Shell parent, ITmfTrace trace) {
         super(parent);
 
-        traceBasePath = trace.getPath();
+        if(trace != null) {
+            traceBasePath = trace.getPath();
+        } else {
+            traceBasePath = ""; //$NON-NLS-1$
+        }
+
+
         hipAnalyzerPath = new String();
         gpuInfoPath = new String();
     }
