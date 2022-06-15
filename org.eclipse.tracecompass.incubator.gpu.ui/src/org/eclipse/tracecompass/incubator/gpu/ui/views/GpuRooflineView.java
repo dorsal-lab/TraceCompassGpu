@@ -3,6 +3,11 @@
  */
 package org.eclipse.tracecompass.incubator.gpu.ui.views;
 
+import org.eclipse.tracecompass.tmf.core.event.ITmfEvent;
+import org.eclipse.tracecompass.tmf.core.request.ITmfEventRequest;
+import org.eclipse.tracecompass.tmf.core.request.TmfEventRequest;
+import org.eclipse.tracecompass.tmf.core.signal.*;
+import org.eclipse.tracecompass.tmf.core.timestamp.TmfTimeRange;
 import org.eclipse.tracecompass.tmf.core.trace.ITmfTrace;
 import org.eclipse.tracecompass.tmf.ui.views.TmfView;
 import org.eclipse.swt.SWT;
@@ -62,4 +67,19 @@ public class GpuRooflineView extends TmfView {
         chart.getLegend().setVisible(false);
     }
 
+    @TmfSignalHandler
+    public void traceSelected(final TmfTraceSelectedSignal signal) {
+//        if(currentTrace == signal.getTrace()) {
+//            return;
+//        }
+//
+//        currentTrace = signal.getTrace();
+//
+//        TmfEventRequest req = new TmfEventRequest(TmfEvent.class, TmfTimeRange.ETERNITY, 0, ITmfEventRequest.ALL_DATA, ITmfEventRequest.ExecutionType.BACKGROUND) {
+//            @Override
+//            public void handleData(ITmfEvent data) {
+//                super.handleData(data);
+//            }
+//        }
+    }
 }

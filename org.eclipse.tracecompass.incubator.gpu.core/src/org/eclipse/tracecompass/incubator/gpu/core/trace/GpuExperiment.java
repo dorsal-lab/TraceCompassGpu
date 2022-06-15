@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0
  **********************************************************************/
 
-package org.eclipse.tracecompass.incubator.internal.gpu.core.trace;
+package org.eclipse.tracecompass.incubator.gpu.core.trace;
 
 import org.eclipse.tracecompass.tmf.core.trace.experiment.TmfExperiment;
 
