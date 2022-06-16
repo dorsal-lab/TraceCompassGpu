@@ -30,6 +30,19 @@ import org.eclipse.ui.handlers.HandlerUtil;
  */
 public class GpuRooflineHandler extends AbstractHandler {
 
+    /**
+     * @brief Command id, corresponding to the plugin.xml configuration
+     */
+    public static final String COMMAND_ID = "org.eclipse.tracecompass.incubator.gpu.ui.gpurooflineconfigure"; //$NON-NLS-1$
+
+    public String getHipAnalyzerPath() {
+        return hipAnalyzerPath;
+    }
+
+    public String getGpuInfoPath() {
+        return gpuInfoPath;
+    }
+
     private String hipAnalyzerPath;
     private String gpuInfoPath;
 
