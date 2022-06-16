@@ -3,6 +3,10 @@
  */
 package org.eclipse.tracecompass.incubator.gpu.ui.views;
 
+import java.io.File;
+
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.swt.SWT;
@@ -12,12 +16,14 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.layout.GridDataFactory;
 import org.eclipse.jface.layout.GridLayoutFactory;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
+import org.eclipse.tracecompass.incubator.internal.gpu.core.Activator;
 import org.eclipse.tracecompass.tmf.core.trace.ITmfTrace;
 import org.eclipse.tracecompass.tmf.core.trace.TmfTraceManager;
 
@@ -97,9 +103,18 @@ public class GpuRooflineAnalysisConfigView extends Dialog {
             public void widgetSelected(@Nullable SelectionEvent e) {
                 FileDialog dialog = new FileDialog(shell, SWT.OPEN);
                 dialog.setFileName(hipAnalyzerPath);
-                hipAnalyzerPath = dialog.open();
+
+                String tmp = dialog.open();
+
+                if(!isValidFile(tmp)) {
+                    promptErrorMessage(shell, "File error", "The chosen file is not valid"); //$NON-NLS-1$ //$NON-NLS-2$
+                    return;
+                }
+
+                hipAnalyzerPath = tmp;
                 if (hipAnalyzerPath != null) {
                     hipAnalyzerPathField.setText(hipAnalyzerPath);
+
                 }
             }
         });
@@ -116,7 +131,14 @@ public class GpuRooflineAnalysisConfigView extends Dialog {
             public void widgetSelected(@Nullable SelectionEvent e) {
                 FileDialog dialog = new FileDialog(shell, SWT.OPEN);
                 dialog.setFileName(gpuInfoPath);
-                gpuInfoPath = dialog.open();
+
+                String tmp = dialog.open();
+                if(!isValidFile(tmp)) {
+                    promptErrorMessage(shell, "File error", "The chosen file is not valid"); //$NON-NLS-1$ //$NON-NLS-2$
+                    return;
+                }
+
+                gpuInfoPath = tmp;
                 if (gpuInfoPath != null) {
                     gpuInfoPathField.setText(gpuInfoPath);
                 }
@@ -147,8 +169,20 @@ public class GpuRooflineAnalysisConfigView extends Dialog {
 
     @Override
     protected void buttonPressed(int buttonId) {
+        Shell shell = getShell();
         if (buttonId == Window.OK) {
+            if(!isValidFile(hipAnalyzerPathField.getText())) {
+                promptErrorMessage(shell, "File error", "Invalid Hip Analyzer path"); //$NON-NLS-1$ //$NON-NLS-2$
+                return;
+            }
+
             hipAnalyzerPath = hipAnalyzerPathField.getText();
+
+            if(!isValidFile(gpuInfoPathField.getText())) {
+                promptErrorMessage(shell, "File error", "Invalid Gpu Info path"); //$NON-NLS-1$ //$NON-NLS-2$
+                return;
+            }
+
             gpuInfoPath = gpuInfoPathField.getText();
         }
         super.buttonPressed(buttonId);
@@ -166,6 +200,29 @@ public class GpuRooflineAnalysisConfigView extends Dialog {
      */
     public @NonNull String getGpuInfoPath() {
         return gpuInfoPath != null ? gpuInfoPath : ""; //$NON-NLS-1$
+    }
+
+    private static void promptErrorMessage(Shell shell, String title, String message) {
+        MessageBox errorBox = new MessageBox(shell, SWT.ICON_ERROR | SWT.OK);
+        errorBox.setText(title);
+        errorBox.setMessage(message);
+        errorBox.open();
+    }
+
+    private static boolean isValidFile(@Nullable String path) {
+        if (path == null) {
+            return false;
+        }
+
+        File f = new File(path);
+        if (!f.exists()) {
+            return false;
+        }
+
+        if (!f.isFile()) {
+            return false;
+        }
+        return true;
     }
 
 }
