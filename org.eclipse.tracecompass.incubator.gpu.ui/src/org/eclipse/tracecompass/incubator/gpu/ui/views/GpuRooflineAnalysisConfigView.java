@@ -3,6 +3,7 @@
  */
 package org.eclipse.tracecompass.incubator.gpu.ui.views;
 
+import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.*;
@@ -18,6 +19,7 @@ import org.eclipse.jface.window.Window;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.tracecompass.tmf.core.trace.ITmfTrace;
+import org.eclipse.tracecompass.tmf.core.trace.TmfTraceManager;
 
 /**
  * @author Sébastien Darche <sebastien.darche@polymtl.ca>
@@ -45,7 +47,7 @@ public class GpuRooflineAnalysisConfigView extends Dialog {
         super(parent);
 
         if (trace != null) {
-            traceBasePath = trace.getPath();
+            traceBasePath = TmfTraceManager.getSupplementaryFileDir(trace);
         } else {
             traceBasePath = ""; //$NON-NLS-1$
         }
@@ -96,7 +98,9 @@ public class GpuRooflineAnalysisConfigView extends Dialog {
                 FileDialog dialog = new FileDialog(shell, SWT.OPEN);
                 dialog.setFileName(hipAnalyzerPath);
                 hipAnalyzerPath = dialog.open();
-                hipAnalyzerPathField.setText(hipAnalyzerPath);
+                if (hipAnalyzerPath != null) {
+                    hipAnalyzerPathField.setText(hipAnalyzerPath);
+                }
             }
         });
 
@@ -113,7 +117,9 @@ public class GpuRooflineAnalysisConfigView extends Dialog {
                 FileDialog dialog = new FileDialog(shell, SWT.OPEN);
                 dialog.setFileName(gpuInfoPath);
                 gpuInfoPath = dialog.open();
-                gpuInfoPathField.setText(gpuInfoPath);
+                if (gpuInfoPath != null) {
+                    gpuInfoPathField.setText(gpuInfoPath);
+                }
             }
         });
 
@@ -151,15 +157,15 @@ public class GpuRooflineAnalysisConfigView extends Dialog {
     /**
      * @return Selected hip_analyzer kernel info
      */
-    public String getHipAnalyzerPath() {
-        return hipAnalyzerPath;
+    public @NonNull String getHipAnalyzerPath() {
+        return hipAnalyzerPath != null ? hipAnalyzerPath : ""; //$NON-NLS-1$
     }
 
     /**
      * @return Selected GPU info
      */
-    public String getGpuInfoPath() {
-        return gpuInfoPath;
+    public @NonNull String getGpuInfoPath() {
+        return gpuInfoPath != null ? gpuInfoPath : ""; //$NON-NLS-1$
     }
 
 }
