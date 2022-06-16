@@ -5,10 +5,12 @@ package org.eclipse.tracecompass.incubator.gpu.ui.views;
 
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.ControlEvent;
-import org.eclipse.swt.events.ControlListener;
+import org.eclipse.swt.events.*;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.FileDialog;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.layout.GridDataFactory;
 import org.eclipse.jface.layout.GridLayoutFactory;
@@ -42,12 +44,11 @@ public class GpuRooflineAnalysisConfigView extends Dialog {
     public GpuRooflineAnalysisConfigView(Shell parent, ITmfTrace trace) {
         super(parent);
 
-        if(trace != null) {
+        if (trace != null) {
             traceBasePath = trace.getPath();
         } else {
             traceBasePath = ""; //$NON-NLS-1$
         }
-
 
         hipAnalyzerPath = new String();
         gpuInfoPath = new String();
@@ -71,16 +72,40 @@ public class GpuRooflineAnalysisConfigView extends Dialog {
 
         Composite localParent = (Composite) super.createDialogArea(parent);
         localParent.addControlListener(resizeLayouter(localParent));
-        localParent.setLayout(GridLayoutFactory.fillDefaults().numColumns(2).create());
-        localParent.setLayoutData(GridDataFactory.fillDefaults().hint(600, 400).grab(true, true).create());
+        localParent.setLayout(GridLayoutFactory.fillDefaults().numColumns(3).margins(10, 10).create());
+        localParent.setLayoutData(GridDataFactory.fillDefaults().hint(600, 200).grab(true, true).create());
 
         // ...
 
+        new Label(localParent, SWT.LEFT).setText("Hip Analyzer file"); //$NON-NLS-1$
         hipAnalyzerPathField = new Text(localParent, SWT.BORDER);
         hipAnalyzerPathField.setText(hipAnalyzerPath);
+        hipAnalyzerPathField.setLayoutData(GridDataFactory.fillDefaults().align(SWT.FILL, SWT.BEGINNING).grab(true, false).create());
 
+        Button hipAnalyzerPathButton = new Button(localParent, SWT.PUSH);
+        hipAnalyzerPathButton.setText("Open .."); //$NON-NLS-1$
+        hipAnalyzerPathButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(@Nullable SelectionEvent e) {
+                FileDialog dialog = new FileDialog(shell, SWT.OPEN);
+                hipAnalyzerPathField.setText(dialog.open());
+            }
+        });
+
+        new Label(localParent, SWT.LEFT).setText("GPU info file"); //$NON-NLS-1$
         gpuInfoPathField = new Text(localParent, SWT.BORDER);
         gpuInfoPathField.setText(gpuInfoPath);
+        gpuInfoPathField.setLayoutData(GridDataFactory.fillDefaults().align(SWT.FILL, SWT.BEGINNING).grab(true, false).create());
+
+        Button gpuInfoPathButton = new Button(localParent, SWT.PUSH);
+        gpuInfoPathButton.setText("Open .."); //$NON-NLS-1$
+        gpuInfoPathButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(@Nullable SelectionEvent e) {
+                FileDialog dialog = new FileDialog(shell, SWT.OPEN);
+                gpuInfoPathField.setText(dialog.open());
+            }
+        });
 
         // Commit
 
@@ -112,10 +137,16 @@ public class GpuRooflineAnalysisConfigView extends Dialog {
         super.buttonPressed(buttonId);
     }
 
+    /**
+     * @return Selected hip_analyzer kernel info
+     */
     public String getHipAnalyzerPath() {
         return hipAnalyzerPathField.getText();
     }
 
+    /**
+     * @return Selected GPU info
+     */
     public String getGpuInfoPath() {
         return gpuInfoPathField.getText();
     }
