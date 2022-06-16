@@ -30,7 +30,20 @@ import org.eclipse.ui.handlers.HandlerUtil;
  */
 public class GpuRooflineHandler extends AbstractHandler {
 
+    private String hipAnalyzerPath;
+    private String gpuInfoPath;
+
     private @Nullable TmfAnalysisElement fAnalysis;
+
+
+    /**
+     * Default constructor
+     */
+    public GpuRooflineHandler() {
+        super();
+        hipAnalyzerPath = new String();
+        gpuInfoPath = new String();
+    }
 
     @Override
     public boolean isEnabled() {
@@ -79,7 +92,11 @@ public class GpuRooflineHandler extends AbstractHandler {
             TmfCommonProjectElement traceElement = parent.getParent();
 
             GpuRooflineAnalysisConfigView dialog = new GpuRooflineAnalysisConfigView(activeShellChecked, traceElement.getTrace());
+            dialog.setPreFilledPaths(hipAnalyzerPath, gpuInfoPath);
             dialog.open();
+
+            hipAnalyzerPath = dialog.getHipAnalyzerPath();
+            gpuInfoPath = dialog.getGpuInfoPath();
 
             TmfOpenTraceHelper.openFromElement(traceElement);
         }

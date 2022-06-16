@@ -50,10 +50,16 @@ public class GpuRooflineAnalysisConfigView extends Dialog {
             traceBasePath = ""; //$NON-NLS-1$
         }
 
-        hipAnalyzerPath = new String();
-        gpuInfoPath = new String();
+        hipAnalyzerPath = traceBasePath + "hip_analyzer.json"; //$NON-NLS-1$
+        gpuInfoPath = traceBasePath + "gpu_info.json"; //$NON-NLS-1$
     }
 
+    /**
+     * @param hipTrace
+     *            Hip trace file path
+     * @param gpuInfo
+     *            GPU info file path
+     */
     public void setPreFilledPaths(String hipTrace, String gpuInfo) {
         hipAnalyzerPath = hipTrace;
         gpuInfoPath = gpuInfo;
@@ -88,7 +94,9 @@ public class GpuRooflineAnalysisConfigView extends Dialog {
             @Override
             public void widgetSelected(@Nullable SelectionEvent e) {
                 FileDialog dialog = new FileDialog(shell, SWT.OPEN);
-                hipAnalyzerPathField.setText(dialog.open());
+                dialog.setFileName(hipAnalyzerPath);
+                hipAnalyzerPath = dialog.open();
+                hipAnalyzerPathField.setText(hipAnalyzerPath);
             }
         });
 
@@ -103,7 +111,9 @@ public class GpuRooflineAnalysisConfigView extends Dialog {
             @Override
             public void widgetSelected(@Nullable SelectionEvent e) {
                 FileDialog dialog = new FileDialog(shell, SWT.OPEN);
-                gpuInfoPathField.setText(dialog.open());
+                dialog.setFileName(gpuInfoPath);
+                gpuInfoPath = dialog.open();
+                gpuInfoPathField.setText(gpuInfoPath);
             }
         });
 
@@ -132,7 +142,8 @@ public class GpuRooflineAnalysisConfigView extends Dialog {
     @Override
     protected void buttonPressed(int buttonId) {
         if (buttonId == Window.OK) {
-            // Probably update some stuff here
+            hipAnalyzerPath = hipAnalyzerPathField.getText();
+            gpuInfoPath = gpuInfoPathField.getText();
         }
         super.buttonPressed(buttonId);
     }
@@ -141,14 +152,14 @@ public class GpuRooflineAnalysisConfigView extends Dialog {
      * @return Selected hip_analyzer kernel info
      */
     public String getHipAnalyzerPath() {
-        return hipAnalyzerPathField.getText();
+        return hipAnalyzerPath;
     }
 
     /**
      * @return Selected GPU info
      */
     public String getGpuInfoPath() {
-        return gpuInfoPathField.getText();
+        return gpuInfoPath;
     }
 
 }
