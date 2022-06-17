@@ -3,6 +3,7 @@
  */
 package org.eclipse.tracecompass.incubator.gpu.analysis;
 
+import java.io.File;
 import java.util.Set;
 
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -12,6 +13,7 @@ import org.eclipse.tracecompass.tmf.core.analysis.requirements.*;
 import org.eclipse.tracecompass.tmf.core.analysis.requirements.TmfAbstractAnalysisRequirement.PriorityLevel;
 import org.eclipse.tracecompass.tmf.core.exceptions.TmfAnalysisException;
 import org.eclipse.tracecompass.tmf.core.trace.ITmfTrace;
+import org.eclipse.tracecompass.tmf.core.trace.TmfTraceManager;
 import org.eclipse.tracecompass.tmf.ui.analysis.TmfAnalysisViewOutput;
 
 /**
@@ -23,8 +25,8 @@ public class GpuRooflineAnalysis extends TmfAbstractAnalysisModule {
     public static final String ID = "org.eclipse.tracecompass.incubator.gpu.core.GpuRooflineAnalysis"; //$NON-NLS-1$
     public static final String ROOFLINE_VIEW_ID = "org.eclipse.tracecompass.incubator.gpu.ui.roofline"; //$NON-NLS-1$
 
-    public static final String PARAM_HIP_ANALYZER = "hip_analyzer_path"; //$NON-NLS-1$
-    public static final String PARAM_GPU_INFO = "gpu_info_path"; //$NON-NLS-1$
+    public static final String HIP_ANALYZER_SUPPLEMENTARY_FILE = "hip_analyzer.json"; //$NON-NLS-1$
+    public static final String GPU_INFO_SUPPLEMENTARY_FILE = "gpu_info.json"; //$NON-NLS-1$
 
     @SuppressWarnings("null")
     @Override
@@ -48,8 +50,15 @@ public class GpuRooflineAnalysis extends TmfAbstractAnalysisModule {
 
     @Override
     protected boolean executeAnalysis(@NonNull IProgressMonitor monitor) throws TmfAnalysisException {
-        String hipAnalyzerPath = (String) getParameter(PARAM_HIP_ANALYZER);
-        String gpuInfoPath = (String) getParameter(PARAM_GPU_INFO);
+        File hipAnalyzerConf = getConfigFile(HIP_ANALYZER_SUPPLEMENTARY_FILE);
+        if (hipAnalyzerConf == null) {
+            return false;
+        }
+
+        File gpuInfoPath = getConfigFile(GPU_INFO_SUPPLEMENTARY_FILE);
+        if (gpuInfoPath == null) {
+            return false;
+        }
 
         return true;
     }
@@ -63,6 +72,21 @@ public class GpuRooflineAnalysis extends TmfAbstractAnalysisModule {
     @NonNull
     public String getHelpText(@NonNull ITmfTrace trace) {
         return "Compute Roofline model for this GPU experiment"; //$NON-NLS-1$
+    }
+
+    private File getConfigFile(String file) {
+        ITmfTrace trace = getTrace();
+        if (trace == null) {
+            return null;
+        }
+
+        String dir = TmfTraceManager.getSupplementaryFileDir(trace);
+        File conf = new File(dir + file);
+        if (!conf.exists()) {
+            return null;
+        }
+
+        return conf;
     }
 
 }

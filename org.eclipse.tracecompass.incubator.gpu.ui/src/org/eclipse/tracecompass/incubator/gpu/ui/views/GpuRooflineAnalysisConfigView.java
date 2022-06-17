@@ -4,9 +4,11 @@
 package org.eclipse.tracecompass.incubator.gpu.ui.views;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 
-import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.swt.SWT;
@@ -23,7 +25,7 @@ import org.eclipse.jface.layout.GridLayoutFactory;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
-import org.eclipse.tracecompass.incubator.internal.gpu.core.Activator;
+import org.eclipse.tracecompass.incubator.gpu.analysis.GpuRooflineAnalysis;
 import org.eclipse.tracecompass.tmf.core.trace.ITmfTrace;
 import org.eclipse.tracecompass.tmf.core.trace.TmfTraceManager;
 
@@ -43,6 +45,8 @@ public class GpuRooflineAnalysisConfigView extends Dialog {
     private Text hipAnalyzerPathField;
     private Text gpuInfoPathField;
 
+    ITmfTrace fTrace;
+
     /**
      * @param parent
      *            Parent widget
@@ -57,6 +61,8 @@ public class GpuRooflineAnalysisConfigView extends Dialog {
         } else {
             traceBasePath = ""; //$NON-NLS-1$
         }
+
+        fTrace = trace;
 
         hipAnalyzerPath = traceBasePath + "hip_analyzer.json"; //$NON-NLS-1$
         gpuInfoPath = traceBasePath + "gpu_info.json"; //$NON-NLS-1$
@@ -106,7 +112,7 @@ public class GpuRooflineAnalysisConfigView extends Dialog {
 
                 String tmp = dialog.open();
 
-                if(!isValidFile(tmp)) {
+                if (!isValidFile(tmp)) {
                     promptErrorMessage(shell, "File error", "The chosen file is not valid"); //$NON-NLS-1$ //$NON-NLS-2$
                     return;
                 }
@@ -133,7 +139,7 @@ public class GpuRooflineAnalysisConfigView extends Dialog {
                 dialog.setFileName(gpuInfoPath);
 
                 String tmp = dialog.open();
-                if(!isValidFile(tmp)) {
+                if (!isValidFile(tmp)) {
                     promptErrorMessage(shell, "File error", "The chosen file is not valid"); //$NON-NLS-1$ //$NON-NLS-2$
                     return;
                 }
@@ -171,19 +177,25 @@ public class GpuRooflineAnalysisConfigView extends Dialog {
     protected void buttonPressed(int buttonId) {
         Shell shell = getShell();
         if (buttonId == Window.OK) {
-            if(!isValidFile(hipAnalyzerPathField.getText())) {
+            if (!isValidFile(hipAnalyzerPathField.getText())) {
                 promptErrorMessage(shell, "File error", "Invalid Hip Analyzer path"); //$NON-NLS-1$ //$NON-NLS-2$
                 return;
             }
 
             hipAnalyzerPath = hipAnalyzerPathField.getText();
+            if (!copyFileToTraceDir(hipAnalyzerPath, GpuRooflineAnalysis.HIP_ANALYZER_SUPPLEMENTARY_FILE)) {
+                promptErrorMessage(shell, "File error", "Could not copy Gpu info"); //$NON-NLS-1$ //$NON-NLS-2$
+            }
 
-            if(!isValidFile(gpuInfoPathField.getText())) {
+            if (!isValidFile(gpuInfoPathField.getText())) {
                 promptErrorMessage(shell, "File error", "Invalid Gpu Info path"); //$NON-NLS-1$ //$NON-NLS-2$
                 return;
             }
 
             gpuInfoPath = gpuInfoPathField.getText();
+            if (!copyFileToTraceDir(gpuInfoPath, GpuRooflineAnalysis.GPU_INFO_SUPPLEMENTARY_FILE)) {
+                promptErrorMessage(shell, "File error", "Could not copy Gpu info"); //$NON-NLS-1$ //$NON-NLS-2$
+            }
         }
         super.buttonPressed(buttonId);
     }
@@ -222,6 +234,19 @@ public class GpuRooflineAnalysisConfigView extends Dialog {
         if (!f.isFile()) {
             return false;
         }
+        return true;
+    }
+
+    private boolean copyFileToTraceDir(String path, String filename) {
+        Path original = Path.of(path);
+        Path copied = Path.of(TmfTraceManager.getSupplementaryFileDir(fTrace) + File.separator + filename);
+
+        try {
+            Files.copy(original, copied, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            return false;
+        }
+
         return true;
     }
 

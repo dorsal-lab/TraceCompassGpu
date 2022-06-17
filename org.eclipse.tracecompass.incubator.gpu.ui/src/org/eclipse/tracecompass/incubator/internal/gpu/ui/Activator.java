@@ -12,9 +12,6 @@
 package org.eclipse.tracecompass.incubator.internal.gpu.ui;
 
 import org.eclipse.jdt.annotation.Nullable;
-import org.eclipse.tracecompass.incubator.gpu.analysis.GpuRooflineAnalysis;
-import org.eclipse.tracecompass.incubator.gpu.ui.core.GpuRooflineParameterProvider;
-import org.eclipse.tracecompass.tmf.core.analysis.TmfAnalysisManager;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
 
@@ -39,8 +36,6 @@ public class Activator extends AbstractUIPlugin {
     public void start(@Nullable BundleContext context) throws Exception {
         super.start(context);
         plugin = this;
-
-        TmfAnalysisManager.registerParameterProvider(GpuRooflineAnalysis.ID, GpuRooflineParameterProvider.class);
     }
 
     @Override
