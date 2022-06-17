@@ -8,7 +8,7 @@ import java.io.IOError;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import org.eclipse.core.internal.runtime.Activator;
+import org.eclipse.tracecompass.incubator.internal.gpu.core.Activator;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 
