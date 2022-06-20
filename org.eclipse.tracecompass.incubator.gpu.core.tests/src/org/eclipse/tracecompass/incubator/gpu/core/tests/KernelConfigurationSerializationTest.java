@@ -19,16 +19,20 @@ public class KernelConfigurationSerializationTest {
 
     private static final String JSON_PATH = "testfiles/hiptrace.json";
 
+    private static final String EXPECTED_JSON = "{\"name\":\"kernel\",\"bblocks\":2,\"geometry\":{\"threads\":{\"x\":1,\"y\":1,\"z\":1},\"blocks\":{\"x\":1,\"y\":1,\"z\":1}}}";
+
     @Test
     public void serializeKernelConfiguration() {
         KernelConfiguration conf = new KernelConfiguration();
 
-        conf.kernelName = new String("kernel");
+        conf.name = new String("kernel");
         conf.bblocks = 2;
-        conf.blocks = new KernelConfiguration.Dim3(1, 1, 1);
-        conf.threads = new KernelConfiguration.Dim3(1, 1, 1);
+        conf.geometry = new KernelConfiguration.Geometry(
+                new KernelConfiguration.Dim3(1, 1, 1),
+                new KernelConfiguration.Dim3(1, 1, 1));
 
         System.out.println(conf.serialize());
+        assertEquals("Json output ", conf.serialize(), EXPECTED_JSON);
     }
 
     @Test
@@ -47,9 +51,9 @@ public class KernelConfigurationSerializationTest {
 
         // Based on the content of the file
 
-        assertEquals("Kernel name ", conf.kernelName, "matrixSquare");
+        assertEquals("Kernel name ", conf.name, "matrixSquare");
         assertEquals("Basic blocks ", conf.bblocks, 2);
-        assertEquals("Threads ", conf.threads, new KernelConfiguration.Dim3(64, 1, 1));
-        assertEquals("Blocks ", conf.blocks, new KernelConfiguration.Dim3(131072, 1, 1));
+        assertEquals("Threads ", conf.geometry.threads, new KernelConfiguration.Dim3(64, 1, 1));
+        assertEquals("Blocks ", conf.geometry.blocks, new KernelConfiguration.Dim3(131072, 1, 1));
     }
 }

@@ -80,6 +80,8 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
             throw new TmfTraceException("Invalid trace header"); //$NON-NLS-1$
         }
 
+        configuration = KernelConfiguration.deserialize(Path.of(path + ".json")); //$NON-NLS-1$
+
         try {
             stream = new FileInputStream(fFile);
             fFileChannel = stream.getChannel();
@@ -106,8 +108,8 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
                 }
 
                 long bblock = pos % configuration.bblocks;
-                long thread = pos % (configuration.bblocks * configuration.threads.x);
-                long block = pos % (configuration.bblocks * configuration.threads.x * configuration.blocks.x);
+                long thread = pos % (configuration.bblocks * configuration.geometry.threads.x);
+                long block = pos % (configuration.bblocks * configuration.geometry.threads.x * configuration.geometry.blocks.x);
 
                 final TmfEventField[] fields = {
                         new TmfEventField("counter", counter, null), //$NON-NLS-1$

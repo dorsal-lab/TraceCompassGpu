@@ -11,6 +11,16 @@ import com.google.gson.Gson;
  *
  */
 public class KernelConfiguration {
+    public static class Geometry {
+        public Dim3 threads;
+        public Dim3 blocks;
+
+        public Geometry(Dim3 _threads, Dim3 _blocks) {
+            threads = _threads;
+            blocks = _blocks;
+        }
+    }
+
     public static class Dim3 {
         /**
          * @param _x
@@ -29,10 +39,9 @@ public class KernelConfiguration {
         public int x, y, z;
     }
 
-    public String kernelName;
+    public String name;
     public int bblocks;
-    public Dim3 threads;
-    public Dim3 blocks;
+    public Geometry geometry;
 
     public String serialize() {
         Gson serializer = new Gson();
