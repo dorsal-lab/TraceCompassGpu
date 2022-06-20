@@ -1,0 +1,16 @@
+{
+    "name": "matrixSquare",
+    "bblocks": 2,
+    "geometry": {
+        "threads": {
+            "x": 64,
+            "y": 1,
+            "z": 1
+        },
+        "blocks": {
+            "x": 131072,
+            "y": 1,
+            "z": 1
+        }
+    }
+}
