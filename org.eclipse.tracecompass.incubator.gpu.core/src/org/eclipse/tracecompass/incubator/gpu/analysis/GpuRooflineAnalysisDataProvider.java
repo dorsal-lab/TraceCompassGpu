@@ -4,6 +4,7 @@
 package org.eclipse.tracecompass.incubator.gpu.analysis;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -79,11 +80,10 @@ public class GpuRooflineAnalysisDataProvider extends AbstractTreeDataProvider<Gp
 
     @Override
     protected TmfTreeModel<TmfTreeDataModel> getTree(ITmfStateSystem ss, Map<String, Object> fetchParameters, @Nullable IProgressMonitor monitor) throws StateSystemDisposedException {
-        // TODO Auto-generated method stub
-        return null;
+        return new TmfTreeModel<>(Collections.emptyList(), Collections.emptyList());
     }
 
-    private List<Long> getExecutionTimes(ITmfStateSystem key) {
+    private static List<Long> getExecutionTimes(ITmfStateSystem key) {
         List<@NonNull Long> times = new ArrayList<>();
 
         // TODO : Get the different kernel execution times from the traces by navigating the state system
