@@ -11,6 +11,11 @@
 
 package org.eclipse.tracecompass.incubator.gpu.core.trace;
 
+import java.util.Collections;
+import java.util.Set;
+
+import org.eclipse.tracecompass.tmf.core.event.ITmfEvent;
+import org.eclipse.tracecompass.tmf.core.trace.ITmfTrace;
 import org.eclipse.tracecompass.tmf.core.trace.experiment.TmfExperiment;
 
 /**
@@ -21,5 +26,22 @@ import org.eclipse.tracecompass.tmf.core.trace.experiment.TmfExperiment;
  *
  */
 public class GpuExperiment extends TmfExperiment {
+
+    /**
+     * @brief Default constructor
+     */
+    public GpuExperiment() {
+        this("", Collections.EMPTY_SET); //$NON-NLS-1$
+    }
+
+    /**
+     * @param id
+     *            Experiment id
+     * @param traces
+     *            Set of traces part of the experiment
+     */
+    public GpuExperiment(String id, Set<ITmfTrace> traces) {
+        super(ITmfEvent.class, id, traces.toArray(new ITmfTrace[traces.size()]), TmfExperiment.DEFAULT_INDEX_PAGE_SIZE, null);
+    }
 
 }
