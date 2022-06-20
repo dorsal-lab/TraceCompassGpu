@@ -88,6 +88,8 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
         } catch (IOException e) {
             throw new TmfTraceException("Could not create reading channel"); //$NON-NLS-1$
         }
+
+        fCurrent = new TmfLongLocation(0L);
     }
 
     @Override
@@ -159,6 +161,8 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
             seek(newLoc.getLocationInfo());
         } catch (IOException e) {
         }
+
+        fCurrent = newLoc;
 
         return new TmfContext(newLoc, newLoc.getLocationInfo());
     }
