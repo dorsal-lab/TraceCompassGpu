@@ -61,7 +61,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
             return new Status(IStatus.ERROR, Activator.PLUGIN_ID, "Could not query trace size"); //$NON-NLS-1$
         }
 
-        if ((traceSize - (fOffset + 1)) != instrSize * sizeofCounter) {
+        if ((traceSize - fOffset) != instrSize * sizeofCounter) {
             return new Status(IStatus.ERROR, Activator.PLUGIN_ID, "Wrong data size, different from header"); //$NON-NLS-1$
         }
 
