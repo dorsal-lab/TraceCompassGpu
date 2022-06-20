@@ -4,14 +4,16 @@
 package org.eclipse.tracecompass.incubator.gpu.analysis;
 
 import java.io.File;
+import java.util.Objects;
 import java.util.Set;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.annotation.NonNull;
-import org.eclipse.tracecompass.tmf.core.analysis.TmfAbstractAnalysisModule;
+import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.tracecompass.tmf.core.analysis.requirements.*;
 import org.eclipse.tracecompass.tmf.core.analysis.requirements.TmfAbstractAnalysisRequirement.PriorityLevel;
-import org.eclipse.tracecompass.tmf.core.exceptions.TmfAnalysisException;
+import org.eclipse.tracecompass.tmf.core.statesystem.ITmfStateProvider;
+import org.eclipse.tracecompass.tmf.core.statesystem.TmfStateSystemAnalysisModule;
 import org.eclipse.tracecompass.tmf.core.trace.ITmfTrace;
 import org.eclipse.tracecompass.tmf.core.trace.TmfTraceManager;
 import org.eclipse.tracecompass.tmf.ui.analysis.TmfAnalysisViewOutput;
@@ -20,7 +22,7 @@ import org.eclipse.tracecompass.tmf.ui.analysis.TmfAnalysisViewOutput;
  * @author Sébastien Darche <sebastien.darche@polymtl.ca>
  *
  */
-public class GpuRooflineAnalysis extends TmfAbstractAnalysisModule {
+public class GpuRooflineAnalysis extends TmfStateSystemAnalysisModule {
 
     public static final String ID = "org.eclipse.tracecompass.incubator.gpu.core.GpuRooflineAnalysis"; //$NON-NLS-1$
     public static final String ROOFLINE_VIEW_ID = "org.eclipse.tracecompass.incubator.gpu.ui.roofline"; //$NON-NLS-1$
@@ -49,7 +51,7 @@ public class GpuRooflineAnalysis extends TmfAbstractAnalysisModule {
     }
 
     @Override
-    protected boolean executeAnalysis(@NonNull IProgressMonitor monitor) throws TmfAnalysisException {
+    protected boolean executeAnalysis(@Nullable IProgressMonitor monitor) {
         File hipAnalyzerConf = getConfigFile(HIP_ANALYZER_SUPPLEMENTARY_FILE);
         if (hipAnalyzerConf == null) {
             return false;
@@ -87,6 +89,11 @@ public class GpuRooflineAnalysis extends TmfAbstractAnalysisModule {
         }
 
         return conf;
+    }
+
+    @Override
+    protected @NonNull ITmfStateProvider createStateProvider() {
+        return new GpuRooflineStateProvider(Objects.requireNonNull(getTrace()), getId());
     }
 
 }
