@@ -74,6 +74,15 @@ public class HipAnalyzerReport {
             return null;
         }
 
+        return deserialize(json);
+    }
+
+    /**
+     * @param json
+     *            JSON string
+     * @return Deserialized report
+     */
+    public static HipAnalyzerReport deserialize(String json) {
         Gson gson = new Gson();
         List<BasicBlock> list = gson.fromJson(json, blockCollectionType);
         if (list == null) {
