@@ -35,7 +35,10 @@ import org.eclipse.tracecompass.tmf.core.trace.ITmfTrace;
 @NonNullByDefault
 public class GpuRooflineAnalysisDataProvider extends AbstractTreeDataProvider<GpuRooflineAnalysis, TmfTreeDataModel> implements ITmfTreeXYDataProvider<TmfTreeDataModel> {
 
-    private static final String ID = "org.eclipse.tracecompass.incubator.gpu.analysis.GpuRooflineAnalysisDataProvider"; //$NON-NLS-1$
+    /**
+     * @brief Data provider ID
+     */
+    public static final String ID = "org.eclipse.tracecompass.incubator.gpu.analysis.GpuRooflineAnalysisDataProvider"; //$NON-NLS-1$
 
     /**
      * @param trace
