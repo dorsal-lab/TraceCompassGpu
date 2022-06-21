@@ -26,6 +26,7 @@
          point="org.eclipse.linuxtools.tmf.core.analysis">
       <module
             analysis_module="org.eclipse.tracecompass.incubator.gpu.analysis.GpuRooflineAnalysis"
+            applies_experiment="true"
             automatic="false"
             id="org.eclipse.tracecompass.incubator.gpu.core.GpuRooflineAnalysis"
             name="GPU roofline model">

@@ -82,7 +82,6 @@ public class GpuRooflineView extends TmfChartView {
         xAxis.getTitle().setText(X_AXIS);
         xAxis.enableLogScale(true);
 
-
         IAxis yAxis = chart.getAxisSet().getYAxis(0);
         yAxis.getTitle().setText(Y_AXIS);
         yAxis.enableLogScale(true);

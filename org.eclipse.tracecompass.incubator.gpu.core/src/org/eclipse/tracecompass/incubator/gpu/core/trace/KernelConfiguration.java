@@ -43,6 +43,9 @@ public class KernelConfiguration {
     public int bblocks;
     public Geometry geometry;
 
+    /**
+     * @return Serialized object
+     */
     public String serialize() {
         Gson serializer = new Gson();
         return serializer.toJson(this);
