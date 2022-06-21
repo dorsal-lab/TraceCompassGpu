@@ -33,7 +33,7 @@ public class HipAnalyzerReport {
         // Info
 
         public int id;
-        public int cland_id;
+        public int clang_id;
         public String begin;
         public String end;
 
