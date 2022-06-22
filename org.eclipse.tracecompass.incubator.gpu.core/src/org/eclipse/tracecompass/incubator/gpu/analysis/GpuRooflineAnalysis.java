@@ -4,12 +4,15 @@
 package org.eclipse.tracecompass.incubator.gpu.analysis;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Set;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.Nullable;
+import org.eclipse.tracecompass.incubator.gpu.core.trace.GpuInfo;
+import org.eclipse.tracecompass.incubator.gpu.core.trace.HipAnalyzerReport;
 import org.eclipse.tracecompass.tmf.core.analysis.requirements.*;
 import org.eclipse.tracecompass.tmf.core.analysis.requirements.TmfAbstractAnalysisRequirement.PriorityLevel;
 import org.eclipse.tracecompass.tmf.core.statesystem.ITmfStateProvider;
@@ -30,6 +33,17 @@ public class GpuRooflineAnalysis extends TmfStateSystemAnalysisModule {
     public static final String HIP_ANALYZER_SUPPLEMENTARY_FILE = "hip_analyzer.json"; //$NON-NLS-1$
     public static final String GPU_INFO_SUPPLEMENTARY_FILE = "gpu_info.json"; //$NON-NLS-1$
 
+    private HipAnalyzerReport report;
+    private GpuInfo gpuInfo;
+
+    /**
+     * @brief Constructor
+     *//*
+    public GpuRooflineAnalysis() {
+        super();
+        registerOutput(new TmfAnalysisViewOutput(ROOFLINE_VIEW_ID));
+    }*/
+
     @SuppressWarnings("null")
     @Override
     public @NonNull Iterable<@NonNull TmfAbstractAnalysisRequirement> getAnalysisRequirements() {
@@ -42,7 +56,7 @@ public class GpuRooflineAnalysis extends TmfStateSystemAnalysisModule {
         TmfAbstractAnalysisRequirement eventsReq = new TmfAnalysisEventRequirement(requiredEvents, PriorityLevel.MANDATORY);
         registerOutput(new TmfAnalysisViewOutput(ROOFLINE_VIEW_ID));
 
-        return Set.of(eventsReq);
+        return Set.of(); // Empty set
     }
 
     @Override
@@ -57,13 +71,19 @@ public class GpuRooflineAnalysis extends TmfStateSystemAnalysisModule {
             return false;
         }
 
+        report = HipAnalyzerReport.deserialize(Path.of(hipAnalyzerConf.getAbsolutePath()));
+
         File gpuInfoPath = getConfigFile(GPU_INFO_SUPPLEMENTARY_FILE);
         if (gpuInfoPath == null) {
             return false;
         }
 
-        return true;
+        gpuInfo = GpuInfo.deserialize(Path.of(gpuInfoPath.getAbsolutePath()));
+
+
+        return super.executeAnalysis(monitor);
     }
+
 
     @Override
     protected void canceling() {
@@ -93,7 +113,7 @@ public class GpuRooflineAnalysis extends TmfStateSystemAnalysisModule {
 
     @Override
     protected @NonNull ITmfStateProvider createStateProvider() {
-        return new GpuRooflineStateProvider(Objects.requireNonNull(getTrace()), getId());
+        return new GpuRooflineStateProvider(Objects.requireNonNull(getTrace()), getId(), null, report, gpuInfo);
     }
 
 }
