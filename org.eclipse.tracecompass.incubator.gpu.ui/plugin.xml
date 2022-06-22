@@ -37,6 +37,7 @@
    <extension
          point="org.eclipse.ui.views">
       <view
+            category="org.eclipse.linuxtools.tmf.ui.views.category"
             class="org.eclipse.tracecompass.incubator.gpu.ui.views.GpuRooflineView"
             id="org.eclipse.tracecompass.incubator.gpu.ui.roofline"
             name="GPU Roofline"

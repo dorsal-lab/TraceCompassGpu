@@ -19,3 +19,4 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.core.expressions;bundle-version="3.8.100"
 Export-Package: org.eclipse.tracecompass.incubator.internal.gpu.ui;x-internal:=true
 Automatic-Module-Name: org.eclipse.tracecompass.incubator.gpu.ui
+Import-Package: com.google.common.collect

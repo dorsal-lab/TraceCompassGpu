@@ -46,8 +46,8 @@
    <extension
          point="org.eclipse.tracecompass.tmf.core.dataprovider">
       <dataProviderFactory
-            class="org.eclipse.tracecompass.incubator.gpu.core.analysis.GpuRooflineDataProviderFactory"
-            id="org.eclipse.tracecompass.incubator.gpu.core.analysis.GpuRooflineDataProviderFactory">
+            class="org.eclipse.tracecompass.incubator.gpu.analysis.GpuRooflineDataProviderFactory"
+            id="org.eclipse.tracecompass.incubator.gpu.analysis.GpuRooflineAnalysisDataProvider">
       </dataProviderFactory>
    </extension>
 
