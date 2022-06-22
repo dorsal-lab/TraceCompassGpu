@@ -47,6 +47,7 @@ public class GpuRooflineAnalysis extends TmfStateSystemAnalysisModule {
     @SuppressWarnings("null")
     @Override
     public @NonNull Iterable<@NonNull TmfAbstractAnalysisRequirement> getAnalysisRequirements() {
+        /*
         Set<@NonNull String> requiredEvents = Set.of(
                 "hip_function_name", //$NON-NLS-1$
                 "hip_api", //$NON-NLS-1$
@@ -54,6 +55,7 @@ public class GpuRooflineAnalysis extends TmfStateSystemAnalysisModule {
         );
 
         TmfAbstractAnalysisRequirement eventsReq = new TmfAnalysisEventRequirement(requiredEvents, PriorityLevel.MANDATORY);
+        */
         registerOutput(new TmfAnalysisViewOutput(ROOFLINE_VIEW_ID));
 
         return Set.of(); // Empty set

@@ -17,6 +17,8 @@ import org.eclipse.tracecompass.statesystem.core.ITmfStateSystem;
 import org.eclipse.tracecompass.statesystem.core.exceptions.StateSystemDisposedException;
 import org.eclipse.tracecompass.tmf.core.model.CommonStatusMessage;
 import org.eclipse.tracecompass.tmf.core.model.TmfCommonXAxisModel;
+import org.eclipse.tracecompass.tmf.core.model.tree.ITmfTreeDataModel;
+import org.eclipse.tracecompass.tmf.core.model.tree.ITmfTreeDataProvider;
 import org.eclipse.tracecompass.tmf.core.model.tree.TmfTreeDataModel;
 import org.eclipse.tracecompass.tmf.core.model.tree.TmfTreeModel;
 import org.eclipse.tracecompass.tmf.core.model.xy.ITmfTreeXYDataProvider;
@@ -26,6 +28,7 @@ import org.eclipse.tracecompass.tmf.core.response.ITmfResponse;
 import org.eclipse.tracecompass.tmf.core.response.TmfModelResponse;
 import org.eclipse.tracecompass.tmf.core.response.ITmfResponse.Status;
 import org.eclipse.tracecompass.tmf.core.trace.ITmfTrace;
+import org.eclipse.tracecompass.tmf.core.trace.TmfTraceUtils;
 
 /**
  * @author Sébastien Darche <sebastien.darche@polymtl.ca>
@@ -48,6 +51,15 @@ public class GpuRooflineAnalysisDataProvider extends AbstractTreeDataProvider<Gp
      */
     public GpuRooflineAnalysisDataProvider(ITmfTrace trace, GpuRooflineAnalysis analysisModule) {
         super(trace, analysisModule);
+    }
+
+    /**
+     * @param trace Trace to be analyzed
+     * @return Data provider
+     */
+    public static @Nullable ITmfTreeDataProvider<? extends ITmfTreeDataModel> create(ITmfTrace trace) {
+        GpuRooflineAnalysis module = TmfTraceUtils.getAnalysisModuleOfClass(trace, GpuRooflineAnalysis.class, GpuRooflineAnalysis.ID);
+        return module != null ? new GpuRooflineAnalysisDataProvider(trace, module) : null;
     }
 
     @Override

@@ -5,7 +5,6 @@ package org.eclipse.tracecompass.incubator.gpu.ui.views;
 
 import org.eclipse.tracecompass.incubator.gpu.analysis.GpuRooflineAnalysis;
 import org.eclipse.tracecompass.incubator.gpu.analysis.GpuRooflineAnalysisDataProvider;
-import org.eclipse.tracecompass.tmf.core.trace.ITmfTrace;
 import org.eclipse.tracecompass.tmf.ui.viewers.xychart.TmfXYChartViewer;
 import org.eclipse.tracecompass.tmf.ui.viewers.xychart.linechart.TmfFilteredXYChartViewer;
 import org.eclipse.tracecompass.tmf.ui.viewers.xychart.linechart.TmfXYChartSettings;
@@ -26,8 +25,6 @@ public class GpuRooflineView extends TmfChartView {
 
     private static final String VIEW_ID = GpuRooflineAnalysis.ROOFLINE_VIEW_ID;
 
-    private ITmfTrace currentTrace;
-
     /**
      * @brief Defaut constructor
      */
@@ -41,29 +38,6 @@ public class GpuRooflineView extends TmfChartView {
     public GpuRooflineView(String viewName) {
         super(viewName);
     }
-/*
-    @Override
-    public void setFocus() {
-        chart.setFocus();
-    }
-
-    @TmfSignalHandler
-    public void traceSelected(final TmfTraceSelectedSignal signal) {
-//        if(currentTrace == signal.getTrace()) {
-//            return;
-//        }
-//
-//        currentTrace = signal.getTrace();
-//
-//        TmfEventRequest req = new TmfEventRequest(TmfEvent.class, TmfTimeRange.ETERNITY, 0, ITmfEventRequest.ALL_DATA, ITmfEventRequest.ExecutionType.BACKGROUND) {
-//            @Override
-//            public void handleData(ITmfEvent data) {
-//                super.handleData(data);
-//            }
-//        }
-    }
-
-*/
 
     @Override
     protected TmfXYChartViewer createChartViewer(Composite parent) {
