@@ -49,6 +49,10 @@ public class HipAnalyzerReport {
 
     private List<BasicBlock> blocks = new ArrayList<>();
 
+    public List<BasicBlock> getBlocks() {
+        return blocks;
+    }
+
     /**
      * @return Serialized object
      */

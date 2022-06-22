@@ -290,7 +290,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
     /**
      * @brief Expected file header, identifying a hiptrace
      */
-    private static final String HIPTRACE_NAME = "hiptrace"; //$NON-NLS-1$
+    public static final String HIPTRACE_NAME = "hiptrace"; //$NON-NLS-1$
 
     /**
      * @brief Trace buffered read size
