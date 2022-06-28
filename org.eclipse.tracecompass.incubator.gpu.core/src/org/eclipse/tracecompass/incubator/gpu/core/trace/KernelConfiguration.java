@@ -11,6 +11,8 @@ import com.google.gson.Gson;
  *
  */
 public class KernelConfiguration {
+    // ----- Inner classes ----- //
+
     public static class Geometry {
         public Dim3 threads;
         public Dim3 blocks;
@@ -39,9 +41,14 @@ public class KernelConfiguration {
         public int x, y, z;
     }
 
+    // ----- Attributes ----- //
+
     public String name;
     public int bblocks;
     public Geometry geometry;
+
+
+    // ----- Methods ----- //
 
     /**
      * @return Serialized object

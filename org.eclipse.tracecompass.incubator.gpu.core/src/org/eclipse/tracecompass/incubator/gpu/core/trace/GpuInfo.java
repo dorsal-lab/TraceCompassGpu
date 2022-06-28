@@ -4,10 +4,14 @@
 package org.eclipse.tracecompass.incubator.gpu.core.trace;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collection;
+import java.util.List;
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 /** @class GpuInfo
  * @brief Holds information about the offload device (peak bandwidth, ..)
@@ -16,7 +20,44 @@ import com.google.gson.Gson;
  *
  */
 public class GpuInfo {
-    // TODO
+    // ----- Inner classes ----- //
+
+    public static class MemoryRoof {
+        public String name;
+        public double peak_bandwidth;
+    }
+
+    public static class ComputeRoof {
+        public String name;
+        public double peak_flops_s;
+    }
+
+    // ----- Attributes ----- //
+
+    // Types
+
+    private static Type memoryRoofCollectionType = new TypeToken<Collection<MemoryRoof>>() {
+    }.getType();
+
+    private static Type computeRoofCollectionType = new TypeToken<Collection<ComputeRoof>>() {
+    }.getType();
+
+    // Attributes
+
+    public String name;
+    public List<MemoryRoof> memory_roofs;
+    public List<ComputeRoof> compute_roofs;
+
+
+    // ----- Methods ----- //
+
+    /**
+     * @return Serialized object
+     */
+    public String serialize() {
+        Gson serializer = new Gson();
+        return serializer.toJson(this);
+    }
 
     /**
      * @param file
