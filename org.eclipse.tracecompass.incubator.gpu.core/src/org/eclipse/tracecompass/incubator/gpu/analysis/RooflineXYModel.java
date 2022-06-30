@@ -68,7 +68,7 @@ public class RooflineXYModel implements ITmfXyModel {
         for (GpuInfo.MemoryRoof it : memoryRoofs) {
             // Why are x values long and not double ????
 
-            long[] xValues = { 1, 2 }; // TODO figure out a way
+            long[] xValues = { (long) (ROOFLINE_Y_MIN / it.peak_bandwidth), (long) (bestCompute.peak_flops_s / it.peak_bandwidth) }; // TODO figure out a way
             double[] yValues = { ROOFLINE_X_MIN / it.peak_bandwidth, bestCompute.peak_flops_s };
 
             series.add(new SeriesModel.SeriesModelBuilder(id, it.name, xValues, yValues)
