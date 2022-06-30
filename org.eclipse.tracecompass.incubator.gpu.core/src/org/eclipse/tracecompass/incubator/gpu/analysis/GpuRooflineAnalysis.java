@@ -87,6 +87,20 @@ public class GpuRooflineAnalysis extends TmfStateSystemAnalysisModule {
     }
 
 
+    /**
+     * @return Loaded hip-analyzer report
+     */
+    public HipAnalyzerReport getReport() {
+        return report;
+    }
+
+    /**
+     * @return Load gpu info (rooflines)
+     */
+    public GpuInfo getGpuInfo() {
+        return gpuInfo;
+    }
+
     @Override
     protected void canceling() {
         return;

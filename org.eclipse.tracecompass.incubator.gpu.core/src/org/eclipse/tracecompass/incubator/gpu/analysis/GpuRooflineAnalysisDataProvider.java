@@ -12,15 +12,18 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.eclipse.tracecompass.incubator.gpu.core.trace.GpuInfo;
 import org.eclipse.tracecompass.internal.tmf.core.model.tree.AbstractTreeDataProvider;
 import org.eclipse.tracecompass.statesystem.core.ITmfStateSystem;
 import org.eclipse.tracecompass.statesystem.core.exceptions.StateSystemDisposedException;
 import org.eclipse.tracecompass.tmf.core.model.CommonStatusMessage;
 import org.eclipse.tracecompass.tmf.core.model.TmfCommonXAxisModel;
+import org.eclipse.tracecompass.tmf.core.model.TmfXyModel;
 import org.eclipse.tracecompass.tmf.core.model.tree.ITmfTreeDataModel;
 import org.eclipse.tracecompass.tmf.core.model.tree.ITmfTreeDataProvider;
 import org.eclipse.tracecompass.tmf.core.model.tree.TmfTreeDataModel;
 import org.eclipse.tracecompass.tmf.core.model.tree.TmfTreeModel;
+import org.eclipse.tracecompass.tmf.core.model.xy.ISeriesModel;
 import org.eclipse.tracecompass.tmf.core.model.xy.ITmfTreeXYDataProvider;
 import org.eclipse.tracecompass.tmf.core.model.xy.ITmfXyModel;
 import org.eclipse.tracecompass.tmf.core.model.xy.IYModel;
@@ -30,6 +33,10 @@ import org.eclipse.tracecompass.tmf.core.response.ITmfResponse.Status;
 import org.eclipse.tracecompass.tmf.core.trace.ITmfTrace;
 import org.eclipse.tracecompass.tmf.core.trace.TmfTraceUtils;
 
+/**
+ * @author Sébastien Darche <sebastien.darche@polymtl.ca>
+ *
+ */
 /**
  * @author Sébastien Darche <sebastien.darche@polymtl.ca>
  *
@@ -54,7 +61,8 @@ public class GpuRooflineAnalysisDataProvider extends AbstractTreeDataProvider<Gp
     }
 
     /**
-     * @param trace Trace to be analyzed
+     * @param trace
+     *            Trace to be analyzed
      * @return Data provider
      */
     public static @Nullable ITmfTreeDataProvider<? extends ITmfTreeDataModel> create(ITmfTrace trace) {
@@ -64,23 +72,26 @@ public class GpuRooflineAnalysisDataProvider extends AbstractTreeDataProvider<Gp
 
     @Override
     public @NonNull TmfModelResponse<@NonNull ITmfXyModel> fetchXY(@NonNull Map<@NonNull String, @NonNull Object> fetchParameters, @Nullable IProgressMonitor monitor) {
-        ITmfStateSystem ss = getAnalysisModule().getStateSystem();
-        if(ss == null) {
-            return new TmfModelResponse<>(null, ITmfResponse.Status.FAILED, CommonStatusMessage.ANALYSIS_INITIALIZATION_FAILED);
-        }
+        /*
+         * ITmfStateSystem ss = getAnalysisModule().getStateSystem(); if(ss ==
+         * null) { return new TmfModelResponse<>(null,
+         * ITmfResponse.Status.FAILED,
+         * CommonStatusMessage.ANALYSIS_INITIALIZATION_FAILED); }
+         *
+         *
+         * List<Long> times = getExecutionTimes(ss);
+         *
+         * // Allocate a "classic" array because the TmfCommonXAxisModel does
+         * not support Lists long[] timesArray = new long[times.size()]; for(int
+         * i = 0; i < times.size(); ++i) { timesArray[i] = times.get(i); }
+         *
+         *
+         * List<IYModel> models = new ArrayList<>();
+         */
+        GpuRooflineAnalysis module = getAnalysisModule();
+        GpuInfo gpuInfo = module.getGpuInfo();
 
-        List<Long> times = getExecutionTimes(ss);
-
-        // Allocate a "classic" array because the TmfCommonXAxisModel does not support Lists
-        long[] timesArray = new long[times.size()];
-        for(int i = 0; i < times.size(); ++i) {
-            timesArray[i] = times.get(i);
-        }
-
-
-        List<IYModel> models = new ArrayList<>();
-
-        return new TmfModelResponse<>(new TmfCommonXAxisModel("GPU Roofline Analysis", timesArray, models), Status.COMPLETED, CommonStatusMessage.COMPLETED); //$NON-NLS-1$
+        return new TmfModelResponse<>(new RooflineXYModel("Roofline", gpuInfo, Collections.EMPTY_LIST), Status.COMPLETED, CommonStatusMessage.COMPLETED); //$NON-NLS-1$
     }
 
     @Override
@@ -90,20 +101,27 @@ public class GpuRooflineAnalysisDataProvider extends AbstractTreeDataProvider<Gp
 
     @Override
     protected boolean isCacheable() {
-        return true;
+        return false;
     }
 
     @Override
     protected TmfTreeModel<TmfTreeDataModel> getTree(ITmfStateSystem ss, Map<String, Object> fetchParameters, @Nullable IProgressMonitor monitor) throws StateSystemDisposedException {
+        /*
+         * GpuRooflineAnalysis module = getAnalysisModule(); GpuInfo gpuInfo =
+         * module.getGpuInfo();
+         *
+         * final long PARENT_ID = 0; // Give the same parent id to each (?)
+         *
+         * List<TmfTreeDataModel> entries = Collections.emptyList();
+         *
+         * entries.add(new TmfTreeDataModel(PARENT_ID, -1, "root"));
+         * //$NON-NLS-1$ entries.add(new RooflineXYModel(1, PARENT_ID,
+         * "Roofline", gpuInfo)); //$NON-NLS-1$
+         */
+        // entries.add(new TimeGraphEntryModel()); // TODO : add XY points
+        // corresponding to roofline entries
+
         return new TmfTreeModel<>(Collections.emptyList(), Collections.emptyList());
-    }
-
-    private static List<Long> getExecutionTimes(ITmfStateSystem key) {
-        List<@NonNull Long> times = new ArrayList<>();
-
-        // TODO : Get the different kernel execution times from the traces by navigating the state system
-
-        return times;
     }
 
 }

@@ -36,6 +36,7 @@ public class GpuRooflineView extends TmfChartView {
 
     private static final String VIEW_ID = GpuRooflineAnalysis.ROOFLINE_VIEW_ID;
 
+
     /**
      * @brief Defaut constructor
      */
