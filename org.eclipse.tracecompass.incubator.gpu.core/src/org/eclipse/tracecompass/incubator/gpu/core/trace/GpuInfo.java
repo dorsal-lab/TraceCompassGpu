@@ -10,7 +10,8 @@ import java.util.List;
 
 import com.google.gson.Gson;
 
-/** @class GpuInfo
+/**
+ * @class GpuInfo
  * @brief Holds information about the offload device (peak bandwidth, ..)
  *
  * @author Sébastien Darche <sebastien.darche@polymtl.ca>
@@ -19,14 +20,28 @@ import com.google.gson.Gson;
 public class GpuInfo {
     // ----- Inner classes ----- //
 
-    public static class MemoryRoof {
-        public String name;
-        public double peak_bandwidth;
+    public interface IRoof {
+        public double getRoof();
     }
 
-    public static class ComputeRoof {
+    public static class MemoryRoof implements IRoof {
+        public String name;
+        public double peak_bandwidth;
+
+        @Override
+        public double getRoof() {
+            return peak_bandwidth;
+        }
+    }
+
+    public static class ComputeRoof implements IRoof {
         public String name;
         public double peak_flops_s;
+
+        @Override
+        public double getRoof() {
+            return peak_flops_s;
+        }
     }
 
     // ----- Attributes ----- //
@@ -36,7 +51,6 @@ public class GpuInfo {
     public String name;
     public List<MemoryRoof> memory_roofs;
     public List<ComputeRoof> compute_roofs;
-
 
     // ----- Methods ----- //
 
