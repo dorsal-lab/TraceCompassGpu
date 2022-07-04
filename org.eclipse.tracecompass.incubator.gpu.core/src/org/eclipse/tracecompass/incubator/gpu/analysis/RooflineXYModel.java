@@ -31,6 +31,8 @@ public class RooflineXYModel implements ITmfXyModel {
     private static final String ROOFLINE_YAXIS_NAME = "Attainable GFlops/s"; //$NON-NLS-1$
     private static final String ROOFLINE_YAXIS_UNIT = ""; //$NON-NLS-1$
 
+    private static final long FIXED_POINT_MULTIPLIER = 1L << 32L;
+
     public static class Point {
         public double x, y;
     }
@@ -68,7 +70,8 @@ public class RooflineXYModel implements ITmfXyModel {
         for (GpuInfo.MemoryRoof it : memoryRoofs) {
             // Why are x values long and not double ????
 
-            long[] xValues = { (long) (ROOFLINE_Y_MIN / it.peak_bandwidth), (long) (bestCompute.peak_flops_s / it.peak_bandwidth) }; // TODO figure out a way
+            long[] xValues = { toFixedPoint(ROOFLINE_Y_MIN / it.peak_bandwidth), toFixedPoint(bestCompute.peak_flops_s / it.peak_bandwidth) }; // TODO
+
             double[] yValues = { ROOFLINE_X_MIN / it.peak_bandwidth, bestCompute.peak_flops_s };
 
             series.add(new SeriesModel.SeriesModelBuilder(id, it.name, xValues, yValues)
@@ -81,7 +84,7 @@ public class RooflineXYModel implements ITmfXyModel {
         for (GpuInfo.ComputeRoof it : computeRoofs) {
             // Why are x values long and not double ????
 
-            long[] xValues = { (long) (it.peak_flops_s / bestMemory.peak_bandwidth), (long) ROOFLINE_X_MAX };
+            long[] xValues = { toFixedPoint(it.peak_flops_s / bestMemory.peak_bandwidth), toFixedPoint(ROOFLINE_X_MAX) };
             // TODO figure out a way to properly pass non-integer values ?
 
             double[] yValues = { it.peak_flops_s, it.peak_flops_s };
@@ -108,6 +111,14 @@ public class RooflineXYModel implements ITmfXyModel {
         }
 
         return max;
+    }
+
+    public static double fromFixedPoint(long value) {
+        return ((double) value) / FIXED_POINT_MULTIPLIER;
+    }
+
+    public static long toFixedPoint(double value) {
+        return (long) (value * FIXED_POINT_MULTIPLIER);
     }
 
 }
