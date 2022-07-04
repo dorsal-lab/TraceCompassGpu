@@ -5,6 +5,7 @@ package org.eclipse.tracecompass.incubator.gpu.ui.views;
 
 import org.eclipse.tracecompass.incubator.gpu.analysis.GpuRooflineAnalysis;
 import org.eclipse.tracecompass.incubator.gpu.analysis.GpuRooflineAnalysisDataProvider;
+import org.eclipse.tracecompass.incubator.gpu.ui.viewers.RooflineChartViewer;
 import org.eclipse.tracecompass.tmf.ui.viewers.TmfViewer;
 import org.eclipse.tracecompass.tmf.ui.viewers.tree.AbstractSelectTreeViewer2;
 import org.eclipse.tracecompass.tmf.ui.viewers.tree.ITmfTreeColumnDataProvider;
@@ -36,7 +37,6 @@ public class GpuRooflineView extends TmfChartView {
 
     private static final String VIEW_ID = GpuRooflineAnalysis.ROOFLINE_VIEW_ID;
 
-
     /**
      * @brief Defaut constructor
      */
@@ -45,7 +45,8 @@ public class GpuRooflineView extends TmfChartView {
     }
 
     /**
-     * @param viewName View name
+     * @param viewName
+     *            View name
      */
     public GpuRooflineView(String viewName) {
         super(viewName);
@@ -54,7 +55,10 @@ public class GpuRooflineView extends TmfChartView {
     @Override
     protected TmfXYChartViewer createChartViewer(Composite parent) {
         TmfXYChartSettings settings = new TmfXYChartSettings(null, null, null, 1);
-        TmfFilteredXYChartViewer chartViewer = new TmfFilteredXYChartViewer(parent, settings, GpuRooflineAnalysisDataProvider.ID);
+        // TmfFilteredXYChartViewer chartViewer = new
+        // TmfFilteredXYChartViewer(parent, settings,
+        // GpuRooflineAnalysisDataProvider.ID);
+        TmfXYChartViewer chartViewer = new RooflineChartViewer(parent, "", GpuRooflineAnalysisDataProvider.ID); //$NON-NLS-1$
 
         Chart chart = chartViewer.getSwtChart();
 
@@ -78,8 +82,7 @@ public class GpuRooflineView extends TmfChartView {
     private static final class TreeViewer extends AbstractSelectTreeViewer2 {
         public TreeViewer(Composite parent) {
             super(parent, 1, GpuRooflineAnalysisDataProvider.ID);
-            }
-
+        }
 
         @Override
         protected ITmfTreeColumnDataProvider getColumnDataProvider() {
