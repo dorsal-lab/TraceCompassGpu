@@ -21,10 +21,10 @@ public class RooflineXYModel implements ITmfXyModel {
     private final Collection<Point> executionTimes;
     private String title;
 
-    private static final double ROOFLINE_X_MIN = 0.5;
-    private static final double ROOFLINE_X_MAX = 16;
-    private static final double ROOFLINE_Y_MIN = 0.5;
-    private static final double ROOFLINE_Y_MAX = 128;
+    public static final double ROOFLINE_X_MIN = 0.5;
+    public static final double ROOFLINE_X_MAX = 16;
+    public static final double ROOFLINE_Y_MIN = 0.5;
+    public static final double ROOFLINE_Y_MAX = 128;
 
     private static final String ROOFLINE_XAXIS_NAME = "Operational Intensity"; //$NON-NLS-1$
     private static final String ROOFLINE_XAXIS_UNIT = "Flops/Byte"; //$NON-NLS-1$
