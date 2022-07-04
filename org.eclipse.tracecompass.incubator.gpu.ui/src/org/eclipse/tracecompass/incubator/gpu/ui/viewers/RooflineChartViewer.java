@@ -43,6 +43,7 @@ public class RooflineChartViewer extends TmfXYChartViewer {
         });
 
         setSwtChart(fSwtChart); // TA-DAAA remove useless listeners
+        setTimeAxisVisible(false);
     }
 
     private void drawGridLines(GC gc) {
@@ -64,8 +65,7 @@ public class RooflineChartViewer extends TmfXYChartViewer {
 
     @Override
     public Control getControl() {
-        // TODO Auto-generated method stub
-        return null;
+        return getSwtChart();
     }
 
     @Override
