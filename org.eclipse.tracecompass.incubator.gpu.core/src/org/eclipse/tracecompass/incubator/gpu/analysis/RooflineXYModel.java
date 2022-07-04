@@ -72,7 +72,7 @@ public class RooflineXYModel implements ITmfXyModel {
 
             long[] xValues = { toFixedPoint(ROOFLINE_Y_MIN / it.peak_bandwidth), toFixedPoint(bestCompute.peak_flops_s / it.peak_bandwidth) }; // TODO
 
-            double[] yValues = { ROOFLINE_X_MIN / it.peak_bandwidth, bestCompute.peak_flops_s };
+            double[] yValues = { fromFixedPoint(xValues[0]) * it.peak_bandwidth, bestCompute.peak_flops_s };
 
             series.add(new SeriesModel.SeriesModelBuilder(id, it.name, xValues, yValues)
                     .xAxisDescription(new TmfXYAxisDescription(ROOFLINE_XAXIS_NAME, ROOFLINE_XAXIS_UNIT, DataType.BINARY_NUMBER))
@@ -119,6 +119,14 @@ public class RooflineXYModel implements ITmfXyModel {
 
     public static long toFixedPoint(double value) {
         return (long) (value * FIXED_POINT_MULTIPLIER);
+    }
+
+    public static double[] fromFixedPointArray(long[] values) {
+        double[] array = new double[values.length];
+        for (int i = 0; i < values.length; ++i) {
+            array[i] = fromFixedPoint(values[0]);
+        }
+        return array;
     }
 
 }

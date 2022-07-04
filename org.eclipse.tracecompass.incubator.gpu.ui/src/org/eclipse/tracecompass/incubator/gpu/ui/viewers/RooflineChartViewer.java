@@ -24,18 +24,21 @@ import org.eclipse.swtchart.Chart;
 import org.eclipse.swtchart.IAxis;
 import org.eclipse.swtchart.IAxisSet;
 import org.eclipse.swtchart.IAxisTick;
+import org.eclipse.swtchart.IBarSeries;
 import org.eclipse.swtchart.ICustomPaintListener;
+import org.eclipse.swtchart.ILineSeries;
+import org.eclipse.swtchart.ISeries;
+import org.eclipse.swtchart.ISeriesSet;
 import org.eclipse.swtchart.ITitle;
 import org.eclipse.swtchart.Range;
-import org.eclipse.tracecompass.common.core.log.TraceCompassLogUtils;
+import org.eclipse.swtchart.ISeries.SeriesType;
 import org.eclipse.tracecompass.incubator.gpu.analysis.RooflineXYModel;
-import org.eclipse.tracecompass.internal.provisional.tmf.core.model.filters.TraceCompassFilter;
-import org.eclipse.tracecompass.internal.provisional.tmf.ui.viewers.xychart.BaseXYPresentationProvider;
-import org.eclipse.tracecompass.internal.tmf.core.model.filters.FetchParametersUtils;
 import org.eclipse.tracecompass.tmf.core.dataprovider.DataProviderManager;
 import org.eclipse.tracecompass.tmf.core.dataprovider.DataProviderParameterUtils;
 import org.eclipse.tracecompass.tmf.core.dataprovider.DataTypeUtils;
 import org.eclipse.tracecompass.tmf.core.model.IOutputStyleProvider;
+import org.eclipse.tracecompass.tmf.core.model.OutputElementStyle;
+import org.eclipse.tracecompass.tmf.core.model.StyleProperties;
 import org.eclipse.tracecompass.tmf.core.model.filters.TimeQueryFilter;
 import org.eclipse.tracecompass.tmf.core.model.timegraph.IFilterProperty;
 import org.eclipse.tracecompass.tmf.core.model.xy.ISeriesModel;
@@ -43,9 +46,11 @@ import org.eclipse.tracecompass.tmf.core.model.xy.ITmfTreeXYDataProvider;
 import org.eclipse.tracecompass.tmf.core.model.xy.ITmfXYDataProvider;
 import org.eclipse.tracecompass.tmf.core.model.xy.ITmfXyModel;
 import org.eclipse.tracecompass.tmf.core.model.xy.TmfXYAxisDescription;
+import org.eclipse.tracecompass.tmf.core.presentation.RGBAColor;
 import org.eclipse.tracecompass.tmf.core.response.ITmfResponse;
 import org.eclipse.tracecompass.tmf.core.response.TmfModelResponse;
 import org.eclipse.tracecompass.tmf.core.trace.ITmfTrace;
+import org.eclipse.tracecompass.tmf.ui.colors.RGBAUtil;
 import org.eclipse.tracecompass.tmf.ui.viewers.xychart.TmfXYChartViewer;
 import org.eclipse.tracecompass.tmf.ui.widgets.timegraph.widgets.TimeGraphColorScheme;
 
@@ -200,7 +205,14 @@ public class RooflineChartViewer extends TmfXYChartViewer {
                 return;
             }
 
-            for(ISeriesModel entry : seriesValues.getSeriesData()) {
+            for (ISeriesModel entry : seriesValues.getSeriesData()) {
+
+                ISeriesSet seriesSet = getSwtChart().getSeriesSet();
+
+                ISeries series = seriesSet.createSeries(SeriesType.LINE, entry.getName());
+                series.setYSeries(entry.getData());
+                series.setXSeries(RooflineXYModel.fromFixedPointArray(entry.getXAxis()));
+
                 // Get the x and y data types
                 if (xAxisDescription == null) {
                     xAxisDescription = entry.getXAxisDescription();
@@ -210,7 +222,6 @@ public class RooflineChartViewer extends TmfXYChartViewer {
                 }
             }
 
-
             IAxisSet axisSet = getSwtChart().getAxisSet();
             if (yAxisDescription != null) {
                 Format format = axisSet.getYAxis(0).getTick().getFormat();
@@ -218,13 +229,13 @@ public class RooflineChartViewer extends TmfXYChartViewer {
                     axisSet.getYAxis(0).getTick().setFormat(DataTypeUtils.getFormat(yAxisDescription.getDataType(), yAxisDescription.getUnit()));
                 }
                 ITitle title = axisSet.getYAxis(0).getTitle();
-                // Set the Y title if it was not previously set (ie it is invisible)
+                // Set the Y title if it was not previously set (ie it is
+                // invisible)
                 if (!title.isVisible()) {
                     title.setText(yAxisDescription.getLabel());
                     title.setVisible(true);
                 }
             }
-
 
             axisSet.getXAxis(0).setRange(new Range(RooflineXYModel.ROOFLINE_X_MIN, RooflineXYModel.ROOFLINE_X_MAX));
             axisSet.getYAxis(0).setRange(new Range(RooflineXYModel.ROOFLINE_Y_MIN, RooflineXYModel.ROOFLINE_Y_MAX));
@@ -237,6 +248,5 @@ public class RooflineChartViewer extends TmfXYChartViewer {
         ITmfTreeXYDataProvider<?> dataProvider = DataProviderManager.getInstance().getOrCreateDataProvider(trace, fId, ITmfTreeXYDataProvider.class);
         return dataProvider;
     }
-
 
 }
