@@ -31,9 +31,7 @@ import org.eclipse.swtchart.IAxis;
  */
 public class GpuRooflineView extends TmfChartView {
 
-    private static final String CHART_NAME = "Roofline"; //$NON-NLS-1$
-    private static final String Y_AXIS = "FLOP / s"; //$NON-NLS-1$
-    private static final String X_AXIS = "Arithmetic Intensity (FLOP / Byte)"; //$NON-NLS-1$
+    private static final String CHART_NAME = "Roofline model"; //$NON-NLS-1$
 
     private static final String VIEW_ID = GpuRooflineAnalysis.ROOFLINE_VIEW_ID;
 
@@ -54,10 +52,6 @@ public class GpuRooflineView extends TmfChartView {
 
     @Override
     protected TmfXYChartViewer createChartViewer(Composite parent) {
-        TmfXYChartSettings settings = new TmfXYChartSettings(null, null, null, 1);
-        // TmfFilteredXYChartViewer chartViewer = new
-        // TmfFilteredXYChartViewer(parent, settings,
-        // GpuRooflineAnalysisDataProvider.ID);
         TmfXYChartViewer chartViewer = new RooflineChartViewer(parent, "", GpuRooflineAnalysisDataProvider.ID); //$NON-NLS-1$
 
         Chart chart = chartViewer.getSwtChart();
@@ -65,16 +59,6 @@ public class GpuRooflineView extends TmfChartView {
         // Set title
 
         chart.getTitle().setText(CHART_NAME);
-
-        // Set log-log chart
-
-        IAxis xAxis = chart.getAxisSet().getXAxis(0);
-        xAxis.getTitle().setText(X_AXIS);
-        xAxis.enableLogScale(true);
-
-        IAxis yAxis = chart.getAxisSet().getYAxis(0);
-        yAxis.getTitle().setText(Y_AXIS);
-        yAxis.enableLogScale(true);
 
         return chartViewer;
     }

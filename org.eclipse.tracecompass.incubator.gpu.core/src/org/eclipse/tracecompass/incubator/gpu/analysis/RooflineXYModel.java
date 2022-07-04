@@ -26,9 +26,9 @@ public class RooflineXYModel implements ITmfXyModel {
     public static final double ROOFLINE_Y_MIN = 0.5;
     public static final double ROOFLINE_Y_MAX = 128;
 
-    private static final String ROOFLINE_XAXIS_NAME = "Operational Intensity"; //$NON-NLS-1$
-    private static final String ROOFLINE_XAXIS_UNIT = "Flops/Byte"; //$NON-NLS-1$
-    private static final String ROOFLINE_YAXIS_NAME = "Attainable GFlops/s"; //$NON-NLS-1$
+    public static final String ROOFLINE_XAXIS_NAME = "Operational Intensity (Flops/Byte)"; //$NON-NLS-1$
+    private static final String ROOFLINE_XAXIS_UNIT = ""; //$NON-NLS-1$
+    public static final String ROOFLINE_YAXIS_NAME = "Attainable Performance (GFlops/s)"; //$NON-NLS-1$
     private static final String ROOFLINE_YAXIS_UNIT = ""; //$NON-NLS-1$
 
     private static final long FIXED_POINT_MULTIPLIER = 1L << 32L;

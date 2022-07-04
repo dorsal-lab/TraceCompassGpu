@@ -21,6 +21,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swtchart.Chart;
+import org.eclipse.swtchart.IAxis;
 import org.eclipse.swtchart.IAxisSet;
 import org.eclipse.swtchart.IAxisTick;
 import org.eclipse.swtchart.ICustomPaintListener;
@@ -94,9 +95,18 @@ public class RooflineChartViewer extends TmfXYChartViewer {
         fSwtChart.setForeground(fColorScheme.getColor(TimeGraphColorScheme.TOOL_FOREGROUND));
 
         fSwtChart.getTitle().setForeground(fColorScheme.getColor(TimeGraphColorScheme.TOOL_FOREGROUND));
-        fSwtChart.getTitle().setForeground(fColorScheme.getColor(TimeGraphColorScheme.TOOL_FOREGROUND));
-        fSwtChart.getAxisSet().getXAxis(0).getTitle().setForeground(fColorScheme.getColor(TimeGraphColorScheme.TOOL_FOREGROUND));
-        fSwtChart.getAxisSet().getYAxis(0).getTitle().setForeground(fColorScheme.getColor(TimeGraphColorScheme.TOOL_FOREGROUND));
+
+        IAxis xAxis = fSwtChart.getAxisSet().getXAxis(0);
+        xAxis.getTitle().setForeground(fColorScheme.getColor(TimeGraphColorScheme.TOOL_FOREGROUND));
+        xAxis.getTick().setForeground(fColorScheme.getColor(TimeGraphColorScheme.TOOL_FOREGROUND));
+        xAxis.getTitle().setText(RooflineXYModel.ROOFLINE_XAXIS_NAME);
+        xAxis.enableLogScale(true);
+
+        IAxis yAxis = fSwtChart.getAxisSet().getYAxis(0);
+        yAxis.getTitle().setForeground(fColorScheme.getColor(TimeGraphColorScheme.TOOL_FOREGROUND));
+        yAxis.getTick().setForeground(fColorScheme.getColor(TimeGraphColorScheme.TOOL_FOREGROUND));
+        yAxis.getTitle().setText(RooflineXYModel.ROOFLINE_YAXIS_NAME);
+        yAxis.enableLogScale(true);
 
         setSwtChart(fSwtChart); // TA-DAAA remove useless listeners
         setTimeAxisVisible(false);
@@ -215,18 +225,6 @@ public class RooflineChartViewer extends TmfXYChartViewer {
                 }
             }
 
-            if (xAxisDescription != null) {
-                Format format = axisSet.getXAxis(0).getTick().getFormat();
-                if (format == null) {
-                    axisSet.getXAxis(0).getTick().setFormat(DataTypeUtils.getFormat(xAxisDescription.getDataType(), xAxisDescription.getUnit()));
-                }
-                ITitle title = axisSet.getXAxis(0).getTitle();
-                // Set the Y title if it was not previously set (ie it is invisible)
-                if (!title.isVisible()) {
-                    title.setText(xAxisDescription.getLabel());
-                    title.setVisible(true);
-                }
-            }
 
             axisSet.getXAxis(0).setRange(new Range(RooflineXYModel.ROOFLINE_X_MIN, RooflineXYModel.ROOFLINE_X_MAX));
             axisSet.getYAxis(0).setRange(new Range(RooflineXYModel.ROOFLINE_Y_MIN, RooflineXYModel.ROOFLINE_Y_MAX));
