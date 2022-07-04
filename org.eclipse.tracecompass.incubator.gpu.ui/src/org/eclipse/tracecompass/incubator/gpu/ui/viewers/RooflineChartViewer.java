@@ -3,6 +3,7 @@
  */
 package org.eclipse.tracecompass.incubator.gpu.ui.viewers;
 
+import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.graphics.Color;
@@ -13,12 +14,16 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swtchart.Chart;
 import org.eclipse.swtchart.ICustomPaintListener;
 import org.eclipse.tracecompass.tmf.ui.viewers.xychart.TmfXYChartViewer;
+import org.eclipse.tracecompass.tmf.ui.widgets.timegraph.widgets.TimeGraphColorScheme;
 
 /**
  * @author Sébastien Darche <sebastien.darche@polymtl.ca>
  *
  */
 public class RooflineChartViewer extends TmfXYChartViewer {
+
+    /** The color scheme for the chart */
+    private @NonNull TimeGraphColorScheme fColorScheme = new TimeGraphColorScheme();
 
     public RooflineChartViewer(Composite parent, String title, String id) {
         super(parent, title, "", "");
@@ -28,7 +33,6 @@ public class RooflineChartViewer extends TmfXYChartViewer {
         getSwtChart().dispose();
 
         Chart fSwtChart = new Chart(fCommonComposite, SWT.NONE);
-
         fSwtChart.getPlotArea().addCustomPaintListener(new ICustomPaintListener() {
 
             @Override
@@ -41,6 +45,12 @@ public class RooflineChartViewer extends TmfXYChartViewer {
                 return true;
             }
         });
+
+        Color backgroundColor = fColorScheme.getColor(TimeGraphColorScheme.TOOL_BACKGROUND);
+        fSwtChart.setBackground(backgroundColor);
+        backgroundColor = fColorScheme.getColor(TimeGraphColorScheme.BACKGROUND);
+        fSwtChart.getPlotArea().setBackground(backgroundColor);
+        fSwtChart.setForeground(fColorScheme.getColor(TimeGraphColorScheme.TOOL_FOREGROUND));
 
         setSwtChart(fSwtChart); // TA-DAAA remove useless listeners
         setTimeAxisVisible(false);
