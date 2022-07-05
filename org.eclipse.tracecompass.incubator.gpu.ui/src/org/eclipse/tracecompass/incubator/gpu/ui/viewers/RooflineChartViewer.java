@@ -31,6 +31,7 @@ import org.eclipse.swtchart.ISeries;
 import org.eclipse.swtchart.ISeriesSet;
 import org.eclipse.swtchart.ITitle;
 import org.eclipse.swtchart.Range;
+import org.eclipse.swtchart.model.DoubleArraySeriesModel;
 import org.eclipse.swtchart.ISeries.SeriesType;
 import org.eclipse.tracecompass.incubator.gpu.analysis.RooflineXYModel;
 import org.eclipse.tracecompass.tmf.core.dataprovider.DataProviderManager;
@@ -204,14 +205,18 @@ public class RooflineChartViewer extends TmfXYChartViewer {
             if (monitor != null && monitor.isCanceled()) {
                 return;
             }
+            ISeriesSet seriesSet = getSwtChart().getSeriesSet();
 
             for (ISeriesModel entry : seriesValues.getSeriesData()) {
 
-                ISeriesSet seriesSet = getSwtChart().getSeriesSet();
+                ISeries<Integer> series = seriesSet.createSeries(SeriesType.LINE, entry.getName());
 
-                ISeries series = seriesSet.createSeries(SeriesType.LINE, entry.getName());
-                series.setYSeries(entry.getData());
-                series.setXSeries(RooflineXYModel.fromFixedPointArray(entry.getXAxis()));
+                //series.setYSeries(entry.getData());
+                //series.setXSeries(RooflineXYModel.fromFixedPointArray(entry.getXAxis()));
+
+                series.setDataModel(new DoubleArraySeriesModel(
+                        RooflineXYModel.fromFixedPointArray(entry.getXAxis()),
+                        entry.getData()));
 
                 // Get the x and y data types
                 if (xAxisDescription == null) {
@@ -222,25 +227,18 @@ public class RooflineChartViewer extends TmfXYChartViewer {
                 }
             }
 
-            IAxisSet axisSet = getSwtChart().getAxisSet();
-            if (yAxisDescription != null) {
-                Format format = axisSet.getYAxis(0).getTick().getFormat();
-                if (format == null) {
-                    axisSet.getYAxis(0).getTick().setFormat(DataTypeUtils.getFormat(yAxisDescription.getDataType(), yAxisDescription.getUnit()));
-                }
-                ITitle title = axisSet.getYAxis(0).getTitle();
-                // Set the Y title if it was not previously set (ie it is
-                // invisible)
-                if (!title.isVisible()) {
-                    title.setText(yAxisDescription.getLabel());
-                    title.setVisible(true);
-                }
-            }
+            Chart fSwtChart = getSwtChart();
+            IAxis xAxis = fSwtChart.getAxisSet().getXAxis(0);
+            xAxis.enableLogScale(true);
+            xAxis.setRange(new Range(RooflineXYModel.ROOFLINE_X_MIN, RooflineXYModel.ROOFLINE_X_MAX));
 
-            axisSet.getXAxis(0).setRange(new Range(RooflineXYModel.ROOFLINE_X_MIN, RooflineXYModel.ROOFLINE_X_MAX));
-            axisSet.getYAxis(0).setRange(new Range(RooflineXYModel.ROOFLINE_Y_MIN, RooflineXYModel.ROOFLINE_Y_MAX));
+            IAxis yAxis = fSwtChart.getAxisSet().getYAxis(0);
+            yAxis.enableLogScale(true);
+            yAxis.setRange(new Range(RooflineXYModel.ROOFLINE_Y_MIN, RooflineXYModel.ROOFLINE_Y_MAX));
 
-            getSwtChart().redraw();
+            fSwtChart.getAxisSet().adjustRange();
+
+            fSwtChart.redraw();
         });
     }
 

@@ -25,6 +25,7 @@ public class RooflineXYModel implements ITmfXyModel {
     public static final double ROOFLINE_X_MAX = 16;
     public static final double ROOFLINE_Y_MIN = 0.5;
     public static final double ROOFLINE_Y_MAX = 128;
+    private static final double FLOPS_TO_GFLOPS = 1e-9;
 
     public static final String ROOFLINE_XAXIS_NAME = "Operational Intensity (Flops/Byte)"; //$NON-NLS-1$
     private static final String ROOFLINE_XAXIS_UNIT = ""; //$NON-NLS-1$
@@ -70,9 +71,10 @@ public class RooflineXYModel implements ITmfXyModel {
         for (GpuInfo.MemoryRoof it : memoryRoofs) {
             // Why are x values long and not double ????
 
-            long[] xValues = { toFixedPoint(ROOFLINE_Y_MIN / it.peak_bandwidth), toFixedPoint(bestCompute.peak_flops_s / it.peak_bandwidth) }; // TODO
+            long[] xValues = { toFixedPoint(ROOFLINE_X_MIN), toFixedPoint(bestCompute.peak_flops_s / it.peak_bandwidth) }; // TODO
 
-            double[] yValues = { fromFixedPoint(xValues[0]) * it.peak_bandwidth, bestCompute.peak_flops_s };
+            double[] yValues = { fromFixedPoint(xValues[0]) * it.peak_bandwidth * FLOPS_TO_GFLOPS,
+                    bestCompute.peak_flops_s * FLOPS_TO_GFLOPS };
 
             series.add(new SeriesModel.SeriesModelBuilder(id, it.name, xValues, yValues)
                     .xAxisDescription(new TmfXYAxisDescription(ROOFLINE_XAXIS_NAME, ROOFLINE_XAXIS_UNIT, DataType.BINARY_NUMBER))
@@ -87,7 +89,7 @@ public class RooflineXYModel implements ITmfXyModel {
             long[] xValues = { toFixedPoint(it.peak_flops_s / bestMemory.peak_bandwidth), toFixedPoint(ROOFLINE_X_MAX) };
             // TODO figure out a way to properly pass non-integer values ?
 
-            double[] yValues = { it.peak_flops_s, it.peak_flops_s };
+            double[] yValues = { it.peak_flops_s * FLOPS_TO_GFLOPS, it.peak_flops_s * FLOPS_TO_GFLOPS };
 
             series.add(new SeriesModel.SeriesModelBuilder(id, it.name, xValues, yValues)
                     .xAxisDescription(new TmfXYAxisDescription(ROOFLINE_XAXIS_NAME, ROOFLINE_XAXIS_UNIT, DataType.BINARY_NUMBER))
@@ -124,7 +126,7 @@ public class RooflineXYModel implements ITmfXyModel {
     public static double[] fromFixedPointArray(long[] values) {
         double[] array = new double[values.length];
         for (int i = 0; i < values.length; ++i) {
-            array[i] = fromFixedPoint(values[0]);
+            array[i] = fromFixedPoint(values[i]);
         }
         return array;
     }
