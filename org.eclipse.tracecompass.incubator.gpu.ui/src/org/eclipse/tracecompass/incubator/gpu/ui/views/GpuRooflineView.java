@@ -12,8 +12,6 @@ import org.eclipse.tracecompass.tmf.ui.viewers.tree.ITmfTreeColumnDataProvider;
 import org.eclipse.tracecompass.tmf.ui.viewers.tree.TmfTreeColumnData;
 import org.eclipse.tracecompass.tmf.ui.viewers.tree.TmfTreeViewerEntry;
 import org.eclipse.tracecompass.tmf.ui.viewers.xychart.TmfXYChartViewer;
-import org.eclipse.tracecompass.tmf.ui.viewers.xychart.linechart.TmfFilteredXYChartViewer;
-import org.eclipse.tracecompass.tmf.ui.viewers.xychart.linechart.TmfXYChartSettings;
 import org.eclipse.tracecompass.tmf.ui.views.xychart.TmfChartView;
 import com.google.common.collect.ImmutableList;
 import java.util.Comparator;
@@ -23,7 +21,6 @@ import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.swt.widgets.*;
 import org.eclipse.swtchart.Chart;
-import org.eclipse.swtchart.IAxis;
 
 /**
  * @author Sébastien Darche <sebastien.darche@polymtl.ca>

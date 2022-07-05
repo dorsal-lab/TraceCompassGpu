@@ -48,7 +48,6 @@ public class GpuRooflineHandler extends AbstractHandler {
 
     private @Nullable TmfAnalysisElement fAnalysis;
 
-
     /**
      * Default constructor
      */

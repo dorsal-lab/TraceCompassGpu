@@ -16,7 +16,7 @@ public class GpuRooflineEnabler extends PropertyTester {
     @Override
     public boolean test(Object receiver, String property, Object[] args, Object expectedValue) {
         TmfAnalysisElement analysis = (TmfAnalysisElement) receiver;
-        if(analysis != null) {
+        if (analysis != null) {
             return analysis.getAnalysisId().equals(GpuRooflineAnalysis.ID);
         }
         return false;

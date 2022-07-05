@@ -3,11 +3,8 @@
  */
 package org.eclipse.tracecompass.incubator.gpu.ui.viewers;
 
-import java.text.Format;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
-import java.util.logging.Level;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
@@ -16,47 +13,28 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swtchart.Chart;
 import org.eclipse.swtchart.IAxis;
-import org.eclipse.swtchart.IAxisSet;
-import org.eclipse.swtchart.IAxisTick;
-import org.eclipse.swtchart.IBarSeries;
 import org.eclipse.swtchart.ICustomPaintListener;
-import org.eclipse.swtchart.ILineSeries;
 import org.eclipse.swtchart.ISeries;
 import org.eclipse.swtchart.ISeriesSet;
-import org.eclipse.swtchart.ITitle;
 import org.eclipse.swtchart.Range;
 import org.eclipse.swtchart.model.DoubleArraySeriesModel;
 import org.eclipse.swtchart.ISeries.SeriesType;
 import org.eclipse.tracecompass.incubator.gpu.analysis.RooflineXYModel;
 import org.eclipse.tracecompass.tmf.core.dataprovider.DataProviderManager;
-import org.eclipse.tracecompass.tmf.core.dataprovider.DataProviderParameterUtils;
-import org.eclipse.tracecompass.tmf.core.dataprovider.DataTypeUtils;
-import org.eclipse.tracecompass.tmf.core.model.IOutputStyleProvider;
-import org.eclipse.tracecompass.tmf.core.model.OutputElementStyle;
-import org.eclipse.tracecompass.tmf.core.model.StyleProperties;
-import org.eclipse.tracecompass.tmf.core.model.filters.TimeQueryFilter;
-import org.eclipse.tracecompass.tmf.core.model.timegraph.IFilterProperty;
 import org.eclipse.tracecompass.tmf.core.model.xy.ISeriesModel;
 import org.eclipse.tracecompass.tmf.core.model.xy.ITmfTreeXYDataProvider;
 import org.eclipse.tracecompass.tmf.core.model.xy.ITmfXYDataProvider;
 import org.eclipse.tracecompass.tmf.core.model.xy.ITmfXyModel;
 import org.eclipse.tracecompass.tmf.core.model.xy.TmfXYAxisDescription;
-import org.eclipse.tracecompass.tmf.core.presentation.RGBAColor;
 import org.eclipse.tracecompass.tmf.core.response.ITmfResponse;
 import org.eclipse.tracecompass.tmf.core.response.TmfModelResponse;
 import org.eclipse.tracecompass.tmf.core.trace.ITmfTrace;
-import org.eclipse.tracecompass.tmf.ui.colors.RGBAUtil;
 import org.eclipse.tracecompass.tmf.ui.viewers.xychart.TmfXYChartViewer;
 import org.eclipse.tracecompass.tmf.ui.widgets.timegraph.widgets.TimeGraphColorScheme;
-
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
 
 /**
  * @author Sébastien Darche <sebastien.darche@polymtl.ca>
@@ -128,16 +106,11 @@ public class RooflineChartViewer extends TmfXYChartViewer {
 
     private void drawGridLines(GC gc) {
         Chart fSwtChart = getSwtChart();
-        Point size = fSwtChart.getPlotArea().getSize();
+        // Point size = fSwtChart.getPlotArea().getSize();
         Color foreground = fSwtChart.getAxisSet().getXAxis(0).getGrid().getForeground();
         gc.setForeground(foreground);
         gc.setAlpha(foreground.getAlpha());
         gc.setLineStyle(SWT.LINE_DOT);
-
-        /*
-         * for (int x : fTimeScaleCtrl.getTickList()) { gc.drawLine(x, 0, x,
-         * size.y); }
-         */
 
         gc.setAlpha(255);
     }
@@ -211,8 +184,8 @@ public class RooflineChartViewer extends TmfXYChartViewer {
 
                 ISeries<Integer> series = seriesSet.createSeries(SeriesType.LINE, entry.getName());
 
-                //series.setYSeries(entry.getData());
-                //series.setXSeries(RooflineXYModel.fromFixedPointArray(entry.getXAxis()));
+                // series.setYSeries(entry.getData());
+                // series.setXSeries(RooflineXYModel.fromFixedPointArray(entry.getXAxis()));
 
                 series.setDataModel(new DoubleArraySeriesModel(
                         RooflineXYModel.fromFixedPointArray(entry.getXAxis()),

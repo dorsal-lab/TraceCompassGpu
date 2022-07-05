@@ -58,7 +58,7 @@ public class GpuRooflineStateProvider extends AbstractTmfStateProvider {
 
     @Override
     protected void eventHandle(@NonNull ITmfEvent event) {
-        if(!event.getType().getName().equals(HipTrace.HIPTRACE_NAME)) {
+        if (!event.getType().getName().equals(HipTrace.HIPTRACE_NAME)) {
             return;
         }
 

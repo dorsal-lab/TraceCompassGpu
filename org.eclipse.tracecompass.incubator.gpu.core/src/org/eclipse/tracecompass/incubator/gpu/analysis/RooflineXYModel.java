@@ -9,7 +9,6 @@ import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.tracecompass.incubator.gpu.core.trace.GpuInfo;
 import org.eclipse.tracecompass.tmf.core.dataprovider.DataType;
 import org.eclipse.tracecompass.tmf.core.model.SeriesModel;
-import org.eclipse.tracecompass.tmf.core.model.tree.TmfTreeDataModel;
 import org.eclipse.tracecompass.tmf.core.model.xy.ISeriesModel;
 import org.eclipse.tracecompass.tmf.core.model.xy.ISeriesModel.DisplayType;
 import org.eclipse.tracecompass.tmf.core.model.xy.ITmfXyModel;

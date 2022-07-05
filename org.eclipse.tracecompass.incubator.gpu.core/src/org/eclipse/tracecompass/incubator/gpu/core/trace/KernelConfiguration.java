@@ -47,7 +47,6 @@ public class KernelConfiguration {
     public int bblocks;
     public Geometry geometry;
 
-
     // ----- Methods ----- //
 
     /**

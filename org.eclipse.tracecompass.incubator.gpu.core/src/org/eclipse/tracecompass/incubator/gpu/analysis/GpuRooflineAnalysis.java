@@ -14,7 +14,6 @@ import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.tracecompass.incubator.gpu.core.trace.GpuInfo;
 import org.eclipse.tracecompass.incubator.gpu.core.trace.HipAnalyzerReport;
 import org.eclipse.tracecompass.tmf.core.analysis.requirements.*;
-import org.eclipse.tracecompass.tmf.core.analysis.requirements.TmfAbstractAnalysisRequirement.PriorityLevel;
 import org.eclipse.tracecompass.tmf.core.statesystem.ITmfStateProvider;
 import org.eclipse.tracecompass.tmf.core.statesystem.TmfStateSystemAnalysisModule;
 import org.eclipse.tracecompass.tmf.core.trace.ITmfTrace;
@@ -39,23 +38,21 @@ public class GpuRooflineAnalysis extends TmfStateSystemAnalysisModule {
     /**
      * @brief Constructor
      *//*
-    public GpuRooflineAnalysis() {
-        super();
-        registerOutput(new TmfAnalysisViewOutput(ROOFLINE_VIEW_ID));
-    }*/
+        * public GpuRooflineAnalysis() { super(); registerOutput(new
+        * TmfAnalysisViewOutput(ROOFLINE_VIEW_ID)); }
+        */
 
     @SuppressWarnings("null")
     @Override
     public @NonNull Iterable<@NonNull TmfAbstractAnalysisRequirement> getAnalysisRequirements() {
         /*
-        Set<@NonNull String> requiredEvents = Set.of(
-                "hip_function_name", //$NON-NLS-1$
-                "hip_api", //$NON-NLS-1$
-                "hip_activity" //$NON-NLS-1$
-        );
-
-        TmfAbstractAnalysisRequirement eventsReq = new TmfAnalysisEventRequirement(requiredEvents, PriorityLevel.MANDATORY);
-        */
+         * Set<@NonNull String> requiredEvents = Set.of( "hip_function_name",
+         * //$NON-NLS-1$ "hip_api", //$NON-NLS-1$ "hip_activity" //$NON-NLS-1$
+         * );
+         *
+         * TmfAbstractAnalysisRequirement eventsReq = new
+         * TmfAnalysisEventRequirement(requiredEvents, PriorityLevel.MANDATORY);
+         */
         registerOutput(new TmfAnalysisViewOutput(ROOFLINE_VIEW_ID));
 
         return Set.of(); // Empty set
@@ -82,10 +79,8 @@ public class GpuRooflineAnalysis extends TmfStateSystemAnalysisModule {
 
         gpuInfo = GpuInfo.deserialize(Path.of(gpuInfoPath.getAbsolutePath()));
 
-
         return super.executeAnalysis(monitor);
     }
-
 
     /**
      * @return Loaded hip-analyzer report
