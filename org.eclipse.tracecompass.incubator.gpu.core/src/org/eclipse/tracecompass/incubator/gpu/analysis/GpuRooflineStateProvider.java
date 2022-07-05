@@ -79,6 +79,12 @@ public class GpuRooflineStateProvider extends AbstractTmfStateProvider {
 
         int quark = ss.getQuarkAbsoluteAndAdd("flops"); //$NON-NLS-1$
         ss.modifyAttribute(ts, totalFlops, quark);
+
+        quark = ss.getQuarkAbsoluteAndAdd("floating_ld"); //$NON-NLS-1$
+        ss.modifyAttribute(ts, totalFloatLoads, quark);
+
+        quark = ss.getQuarkAbsoluteAndAdd("floating_s"); //$NON-NLS-1$
+        ss.modifyAttribute(ts, totalFloatStores, quark);
     }
 
 }

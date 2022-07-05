@@ -35,6 +35,43 @@ import org.eclipse.tracecompass.tmf.core.trace.location.TmfLongLocation;
  */
 public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
 
+    // ----- Trace file location ----- //
+
+    private File fFile;
+    private FileInputStream stream;
+    private long fSize;
+    private FileChannel fFileChannel;
+    private TmfLongLocation fCurrent;
+    private MappedByteBuffer fMappedByteBuffer;
+    private int fOffset;
+
+    private TmfEvent fCurrentEvent;
+
+    // ----- Trace information ----- //
+
+    private String kernelName;
+    private int instrSize;
+    private long stamp;
+    private long roctracerBegin;
+    private long roctracerEnd;
+    private short sizeofCounter;
+    private KernelConfiguration configuration;
+
+    /**
+     * @brief Number of expected tokens in header
+     */
+    private static final int HEADER_TOKENS = 7;
+
+    /**
+     * @brief Expected file header, identifying a hiptrace
+     */
+    public static final String HIPTRACE_NAME = "hiptrace"; //$NON-NLS-1$
+
+    /**
+     * @brief Trace buffered read size
+     */
+    private static final int BUFFER_SIZE = 4096;
+
     public HipTrace() {
         super();
     }
@@ -224,7 +261,19 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
         }
 
         try {
-            sizeofCounter = Short.parseShort(tokens[4]);
+            roctracerBegin = Long.parseLong(tokens[4]);
+        } catch (NumberFormatException e) {
+            return false;
+        }
+
+        try {
+            roctracerEnd = Long.parseLong(tokens[5]);
+        } catch (NumberFormatException e) {
+            return false;
+        }
+
+        try {
+            sizeofCounter = Short.parseShort(tokens[6]);
         } catch (NumberFormatException e) {
             return false;
         }
@@ -250,50 +299,39 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
 
     // ----- Getters ----- //
 
+    /**
+     * @return Kernel launch configuration
+     */
     public KernelConfiguration getConfiguration() {
         return configuration;
     }
 
+    /**
+     * @return Kernel name
+     */
     public String getKernelName() {
         return kernelName;
     }
 
+    /**
+     * @return Chrono time stamp
+     */
     public long getStamp() {
         return stamp;
     }
 
-    // ----- Trace file location ----- //
-
-    private File fFile;
-    private FileInputStream stream;
-    private long fSize;
-    private FileChannel fFileChannel;
-    private TmfLongLocation fCurrent;
-    private MappedByteBuffer fMappedByteBuffer;
-    private int fOffset;
-
-    private TmfEvent fCurrentEvent;
-
-    // ----- Trace information ----- //
-
-    private String kernelName;
-    private int instrSize;
-    private long stamp;
-    private short sizeofCounter;
-    private KernelConfiguration configuration;
+    /**
+     * @return Roctracer timestamp before kernel launch
+     */
+    public long getRoctracerBegin() {
+        return roctracerBegin;
+    }
 
     /**
-     * @brief Number of expected tokens in header
+     * @return Roctracer timestamp after kernel completion
      */
-    private static final int HEADER_TOKENS = 5;
+    public long getRoctracerEnd() {
+        return roctracerEnd;
+    }
 
-    /**
-     * @brief Expected file header, identifying a hiptrace
-     */
-    public static final String HIPTRACE_NAME = "hiptrace"; //$NON-NLS-1$
-
-    /**
-     * @brief Trace buffered read size
-     */
-    private static final int BUFFER_SIZE = 4096;
 }
