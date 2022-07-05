@@ -32,15 +32,41 @@ public class HipAnalyzerReport {
     public static class BasicBlock {
         // Info
 
+        /**
+         * @brief Basic block id (contiguous)
+         */
         public int id;
+
+        /**
+         * @brief Basic block id from the clang CFG
+         */
         public int clang_id;
+
+        /**
+         * @brief Begin location
+         */
         public String begin;
+
+        /**
+         * @brief End location
+         */
         public String end;
 
         // Counters
 
+        /**
+         * @brief Number of floating point operations
+         */
         public int flops;
+
+        /**
+         * @brief Total number of loaded bytes
+         */
         public int floating_ld;
+
+        /**
+         * @brief Total number of stored bytes
+         */
         public int floating_st;
     }
 
@@ -49,6 +75,9 @@ public class HipAnalyzerReport {
 
     private List<BasicBlock> blocks = new ArrayList<>();
 
+    /**
+     * @return List of basic blocks in the kernel
+     */
     public List<BasicBlock> getBlocks() {
         return blocks;
     }

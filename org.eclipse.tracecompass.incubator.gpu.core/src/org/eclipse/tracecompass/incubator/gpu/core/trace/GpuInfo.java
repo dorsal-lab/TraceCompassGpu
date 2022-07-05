@@ -8,6 +8,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+import org.eclipse.jdt.annotation.Nullable;
+
 import com.google.gson.Gson;
 
 /**
@@ -20,12 +22,28 @@ import com.google.gson.Gson;
 public class GpuInfo {
     // ----- Inner classes ----- //
 
+    /**
+     * @brief Abstract roof with value
+     */
     public interface IRoof {
+        /**
+         * @return Roof value
+         */
         public double getRoof();
     }
 
+    /**
+     * @brief Memory bottleneck
+     *
+     */
     public static class MemoryRoof implements IRoof {
+        /**
+         * @brief Roof name
+         */
         public String name;
+        /**
+         * @brief Maximum attainable bandwidth (bytes / second)
+         */
         public double peak_bandwidth;
 
         @Override
@@ -34,8 +52,18 @@ public class GpuInfo {
         }
     }
 
+    /**
+     * @brief Compute efficiency bottleneck
+     *
+     */
     public static class ComputeRoof implements IRoof {
+        /**
+         * @brief Roof name
+         */
         public String name;
+        /**
+         * @brief Maximum attainable operational intensity (Flop/second)
+         */
         public double peak_flops_s;
 
         @Override
@@ -48,8 +76,17 @@ public class GpuInfo {
 
     // Types
 
+    /**
+     * @brief Device (or model) name
+     */
     public String name;
+    /**
+     * @brief List of memory roofs
+     */
     public List<MemoryRoof> memory_roofs;
+    /**
+     * @brief List of compute roofs
+     */
     public List<ComputeRoof> compute_roofs;
 
     // ----- Methods ----- //
@@ -87,9 +124,10 @@ public class GpuInfo {
      *            JSON string
      * @return Deserialized report
      */
-    public static GpuInfo deserialize(String json) {
+    public static @Nullable GpuInfo deserialize(String json) {
         Gson gson = new Gson();
 
+        @Nullable
         GpuInfo obj = gson.fromJson(json, GpuInfo.class);
 
         return obj;
