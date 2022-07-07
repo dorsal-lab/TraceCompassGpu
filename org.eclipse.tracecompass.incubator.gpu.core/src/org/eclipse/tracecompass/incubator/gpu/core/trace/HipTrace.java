@@ -160,7 +160,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
                 final TmfEventField content = new TmfEventField(
                         ITmfEventField.ROOT_FIELD_ID, null, fields);
 
-                event = new TmfEvent(this, pos, TmfTimestamp.fromMicros(stamp), new TmfEventType(HIPTRACE_NAME, content), content);
+                event = new TmfEvent(this, pos, TmfTimestamp.fromNanos(roctracerBegin), new TmfEventType(HIPTRACE_NAME, content), content);
 
             } catch (IOException e) {
             }
@@ -233,7 +233,13 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
         try (BufferedReader br = new BufferedReader(new FileReader(f));) {
             header = br.readLine();
         } catch (IOException e) {
+            return false;
         }
+
+        if(header == null) {
+            return false;
+        }
+
         fOffset = header.length() + 1;
 
         String[] tokens = header.split(",", HEADER_TOKENS); //$NON-NLS-1$
