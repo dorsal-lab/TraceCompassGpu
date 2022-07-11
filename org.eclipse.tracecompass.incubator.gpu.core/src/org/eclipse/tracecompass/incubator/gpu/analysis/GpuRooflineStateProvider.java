@@ -37,7 +37,15 @@ public class GpuRooflineStateProvider extends AbstractTmfStateProvider {
     private long totalFloatLoads = 0L;
     private long totalFloatStores = 0L;
 
+    // Quarks
+
+    private int flopsQuark;
+    private int loadsQuark;
+    private int storesQuark;
+
     private Map<Pair<String, Long>, String> functionMap;
+
+    private ITmfEvent lastKernelCall = null;
 
     /**
      * @brief Supported ROCm traces
@@ -85,6 +93,10 @@ public class GpuRooflineStateProvider extends AbstractTmfStateProvider {
 
     @Override
     protected void eventHandle(@NonNull ITmfEvent event) {
+        if(flopsQuark == 0) {
+            initQuarks();
+        }
+
         switch (event.getType().getName()) {
         case HipTrace.HIPTRACE_NAME:
             handleHipTraceEvent(event);
@@ -105,11 +117,23 @@ public class GpuRooflineStateProvider extends AbstractTmfStateProvider {
             handleHipApiEvent(event);
             break;
         case "kernel_event": //$NON-NLS-1$
+            handleKernelEvent(event);
             break;
         default:
             break;
         }
 
+    }
+
+    /**
+     * @brief Initializes the quarks
+     */
+    protected void initQuarks() {
+        ITmfStateSystemBuilder ss = Objects.requireNonNull(getStateSystemBuilder());
+
+        flopsQuark = ss.getQuarkAbsoluteAndAdd("flops"); //$NON-NLS-1$
+        loadsQuark = ss.getQuarkAbsoluteAndAdd("floating_ld"); //$NON-NLS-1$
+        storesQuark = ss.getQuarkAbsoluteAndAdd("floating_s"); //$NON-NLS-1$
     }
 
     /**
@@ -145,10 +169,10 @@ public class GpuRooflineStateProvider extends AbstractTmfStateProvider {
     }
 
     /**
-     * Handles a name definition event ("hsa_function_name") from the ROCm trace
+     * Handles a name definition event ("<api>_function_name") from the ROCm trace
      *
      * @param event
-     *            The event, assumed to be a hsa_fucntion_name event
+     *            The event, assumed to be a <...>_function_name event
      * @param prefix
      *            API prefix ({@link APIType}
      */
@@ -160,9 +184,12 @@ public class GpuRooflineStateProvider extends AbstractTmfStateProvider {
         functionMap.put(new Pair<>(prefix, cid), name);
     }
 
-    private String getCorrelationName(Long cid, String prefix) {
-        Pair<String, Long> entry = new Pair<>(prefix, cid); // $NON-NLS-1$
-                                                            // //$NON-NLS-2$
+    private String getCorrelationName(ITmfEvent event, String prefix) {
+        Long cid = (Long) event
+                .getContent()
+                .getField("cid") //$NON-NLS-1$
+                .getValue();
+        Pair<String, Long> entry = new Pair<>(prefix, cid);
         return functionMap.get(entry);
     }
 
@@ -174,8 +201,7 @@ public class GpuRooflineStateProvider extends AbstractTmfStateProvider {
      */
     protected void handleHsaApiEvent(@NonNull ITmfEvent event) {
         ITmfEventField root = event.getContent();
-        Long cid = (Long) root.getField("cid").getValue(); //$NON-NLS-1$
-        String func = getCorrelationName(cid, APIType.HSA_API);
+        String func = getCorrelationName(event, APIType.HSA_API);
 
         if (func == null) {
             // Unknown function, do not process
@@ -191,13 +217,28 @@ public class GpuRooflineStateProvider extends AbstractTmfStateProvider {
      */
     protected void handleHipApiEvent(@NonNull ITmfEvent event) {
         ITmfEventField root = event.getContent();
-        Long cid = (Long) root.getField("cid").getValue(); //$NON-NLS-1$
-        String func = getCorrelationName(cid, APIType.HIP_API);
+
+        String func = getCorrelationName(event, APIType.HIP_API);
 
         if (func == null) {
             // Unknown function, do not process
             return;
         }
+    }
+
+    /**
+     * Handles a kernel event (most frequently a kernel call)
+     *
+     * @param event
+     *            The event, assumed to be a kernel_event
+     */
+    protected void handleKernelEvent(@NonNull ITmfEvent event) {
+        lastKernelCall = event;
+        // Reset last total Flops, loads, stores
+
+        totalFlops = 0L;
+        totalFloatLoads = 0L;
+        totalFloatStores = 0L;
     }
 
 }
