@@ -160,7 +160,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
                 final TmfEventField content = new TmfEventField(
                         ITmfEventField.ROOT_FIELD_ID, null, fields);
 
-                event = new TmfEvent(this, pos, TmfTimestamp.fromNanos(roctracerBegin), new TmfEventType(HIPTRACE_NAME, content), content);
+                event = new TmfEvent(this, pos, TmfTimestamp.fromNanos(roctracerEnd), new TmfEventType(HIPTRACE_NAME, content), content);
 
             } catch (IOException e) {
             }
