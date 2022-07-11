@@ -39,9 +39,10 @@ public class GpuRooflineStateProvider extends AbstractTmfStateProvider {
 
     // Quarks
 
-    private int flopsQuark;
-    private int loadsQuark;
-    private int storesQuark;
+    private static int DEFAULT_QUARK = -1;
+    private int flopsQuark = DEFAULT_QUARK;
+    private int loadsQuark = DEFAULT_QUARK;
+    private int storesQuark = DEFAULT_QUARK;
 
     private Map<Pair<String, Long>, String> functionMap;
 
@@ -93,7 +94,7 @@ public class GpuRooflineStateProvider extends AbstractTmfStateProvider {
 
     @Override
     protected void eventHandle(@NonNull ITmfEvent event) {
-        if(flopsQuark == 0) {
+        if (flopsQuark == DEFAULT_QUARK) {
             initQuarks();
         }
 
@@ -143,7 +144,7 @@ public class GpuRooflineStateProvider extends AbstractTmfStateProvider {
      *            The event, assumed to be a valid hiptrace event
      */
     protected void handleHipTraceEvent(@NonNull ITmfEvent event) {
-        long ts = event.getTimestamp().getValue();
+        long ts = lastKernelCall.getTimestamp().getValue();
 
         long counter = (long) event.getContent().getField("counter").getValue(); //$NON-NLS-1$
         long blockId = (long) event.getContent().getField("bblock").getValue(); //$NON-NLS-1$
@@ -158,18 +159,14 @@ public class GpuRooflineStateProvider extends AbstractTmfStateProvider {
 
         ITmfStateSystemBuilder ss = Objects.requireNonNull(getStateSystemBuilder());
 
-        int quark = ss.getQuarkAbsoluteAndAdd("flops"); //$NON-NLS-1$
-        ss.modifyAttribute(ts, totalFlops, quark);
-
-        quark = ss.getQuarkAbsoluteAndAdd("floating_ld"); //$NON-NLS-1$
-        ss.modifyAttribute(ts, totalFloatLoads, quark);
-
-        quark = ss.getQuarkAbsoluteAndAdd("floating_s"); //$NON-NLS-1$
-        ss.modifyAttribute(ts, totalFloatStores, quark);
+        ss.modifyAttribute(ts, totalFlops, flopsQuark);
+        ss.modifyAttribute(ts, totalFloatLoads, loadsQuark);
+        ss.modifyAttribute(ts, totalFloatStores, storesQuark);
     }
 
     /**
-     * Handles a name definition event ("<api>_function_name") from the ROCm trace
+     * Handles a name definition event ("<api>_function_name") from the ROCm
+     * trace
      *
      * @param event
      *            The event, assumed to be a <...>_function_name event
@@ -233,6 +230,18 @@ public class GpuRooflineStateProvider extends AbstractTmfStateProvider {
      *            The event, assumed to be a kernel_event
      */
     protected void handleKernelEvent(@NonNull ITmfEvent event) {
+        if (lastKernelCall != null) {
+            // Update state system
+
+            ITmfStateSystemBuilder ss = Objects.requireNonNull(getStateSystemBuilder());
+
+            long ts = (Long) lastKernelCall.getContent().getField("end").getValue(); //$NON-NLS-1$
+            ss.modifyAttribute(ts, 0L, flopsQuark);
+            ss.modifyAttribute(ts, 0L, loadsQuark);
+            ss.modifyAttribute(ts, 0L, storesQuark);
+
+        }
+
         lastKernelCall = event;
         // Reset last total Flops, loads, stores
 

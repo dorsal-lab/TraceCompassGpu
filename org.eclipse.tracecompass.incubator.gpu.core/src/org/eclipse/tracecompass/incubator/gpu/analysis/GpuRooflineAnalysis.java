@@ -127,4 +127,10 @@ public class GpuRooflineAnalysis extends TmfStateSystemAnalysisModule {
         return new GpuRooflineStateProvider(Objects.requireNonNull(getTrace()), getId(), null, report, gpuInfo);
     }
 
+    @Override
+    protected StateSystemBackendType getBackendType() {
+        // Using the in-memory state system to ensure no caching (for dev.)
+        return StateSystemBackendType.INMEM;
+    }
+
 }
