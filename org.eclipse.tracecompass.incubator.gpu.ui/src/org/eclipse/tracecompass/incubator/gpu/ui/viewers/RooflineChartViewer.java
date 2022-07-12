@@ -18,14 +18,18 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swtchart.Chart;
 import org.eclipse.swtchart.IAxis;
 import org.eclipse.swtchart.ICustomPaintListener;
+import org.eclipse.swtchart.ILineSeries;
+import org.eclipse.swtchart.ILineSeries.PlotSymbolType;
 import org.eclipse.swtchart.ISeries;
 import org.eclipse.swtchart.ISeriesSet;
+import org.eclipse.swtchart.LineStyle;
 import org.eclipse.swtchart.Range;
 import org.eclipse.swtchart.model.DoubleArraySeriesModel;
 import org.eclipse.swtchart.ISeries.SeriesType;
 import org.eclipse.tracecompass.incubator.gpu.analysis.RooflineXYModel;
 import org.eclipse.tracecompass.tmf.core.dataprovider.DataProviderManager;
 import org.eclipse.tracecompass.tmf.core.model.xy.ISeriesModel;
+import org.eclipse.tracecompass.tmf.core.model.xy.ISeriesModel.DisplayType;
 import org.eclipse.tracecompass.tmf.core.model.xy.ITmfTreeXYDataProvider;
 import org.eclipse.tracecompass.tmf.core.model.xy.ITmfXYDataProvider;
 import org.eclipse.tracecompass.tmf.core.model.xy.ITmfXyModel;
@@ -182,14 +186,17 @@ public class RooflineChartViewer extends TmfXYChartViewer {
 
             for (ISeriesModel entry : seriesValues.getSeriesData()) {
 
-                ISeries<Integer> series = seriesSet.createSeries(SeriesType.LINE, entry.getName());
-
-                // series.setYSeries(entry.getData());
-                // series.setXSeries(RooflineXYModel.fromFixedPointArray(entry.getXAxis()));
+                ILineSeries<Integer> series = (ILineSeries<Integer>) seriesSet.createSeries(SeriesType.LINE, entry.getName());
 
                 series.setDataModel(new DoubleArraySeriesModel(
                         RooflineXYModel.fromFixedPointArray(entry.getXAxis()),
                         entry.getData()));
+
+                if (entry.getDisplayType() == DisplayType.SCATTER) {
+                    series.setLineStyle(LineStyle.NONE);
+                    series.setSymbolType(PlotSymbolType.SQUARE);
+                    series.setSymbolSize(8);
+                }
 
                 // Get the x and y data types
                 if (xAxisDescription == null) {
@@ -208,8 +215,6 @@ public class RooflineChartViewer extends TmfXYChartViewer {
             IAxis yAxis = fSwtChart.getAxisSet().getYAxis(0);
             yAxis.enableLogScale(true);
             yAxis.setRange(new Range(RooflineXYModel.ROOFLINE_Y_MIN, RooflineXYModel.ROOFLINE_Y_MAX));
-
-            fSwtChart.getAxisSet().adjustRange();
 
             fSwtChart.redraw();
         });

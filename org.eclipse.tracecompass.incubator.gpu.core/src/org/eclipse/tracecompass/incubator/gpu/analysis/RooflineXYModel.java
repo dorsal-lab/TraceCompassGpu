@@ -20,7 +20,7 @@ public class RooflineXYModel implements ITmfXyModel {
     private final Collection<Point> executionTimes;
     private String title;
 
-    public static final double ROOFLINE_X_MIN = 0.5;
+    public static final double ROOFLINE_X_MIN = 0.083333;
     public static final double ROOFLINE_X_MAX = 16;
     public static final double ROOFLINE_Y_MIN = 0.5;
     public static final double ROOFLINE_Y_MAX = 128;
@@ -72,6 +72,8 @@ public class RooflineXYModel implements ITmfXyModel {
 
         long id = 0;
 
+        // Memory roofs (slanted)
+
         for (GpuInfo.MemoryRoof it : memoryRoofs) {
             // Why are x values long and not double ????
 
@@ -85,7 +87,10 @@ public class RooflineXYModel implements ITmfXyModel {
                     .yAxisDescription(new TmfXYAxisDescription(ROOFLINE_YAXIS_NAME, ROOFLINE_YAXIS_UNIT))
                     .seriesDisplayType(DisplayType.LINE)
                     .build());
+            ++id;
         }
+
+        // Compute roofs (straight)
 
         for (GpuInfo.ComputeRoof it : computeRoofs) {
             // Why are x values long and not double ????
@@ -100,7 +105,29 @@ public class RooflineXYModel implements ITmfXyModel {
                     .yAxisDescription(new TmfXYAxisDescription(ROOFLINE_YAXIS_NAME, ROOFLINE_YAXIS_UNIT))
                     .seriesDisplayType(DisplayType.LINE)
                     .build());
+
+            ++id;
         }
+
+        // Add roofline points
+
+        long[] pointsXValues = new long[executionTimes.size()];
+        double[] pointsYValues = new double[executionTimes.size()];
+
+        int i = 0;
+        for (Point p : executionTimes) {
+            pointsXValues[i] = toFixedPoint(p.x);
+            pointsYValues[i] = p.y * FLOPS_TO_GFLOPS;
+            ++i;
+        }
+
+        series.add(new SeriesModel.SeriesModelBuilder(id, "Roofline", pointsXValues, pointsYValues) //$NON-NLS-1$
+                .seriesDisplayType(DisplayType.SCATTER)
+                .xAxisDescription(new TmfXYAxisDescription(ROOFLINE_XAXIS_NAME, ROOFLINE_XAXIS_UNIT, DataType.BINARY_NUMBER))
+                .yAxisDescription(new TmfXYAxisDescription(ROOFLINE_YAXIS_NAME, ROOFLINE_YAXIS_UNIT))
+                .build());
+
+        ++id;
 
         return series;
     }
@@ -119,14 +146,32 @@ public class RooflineXYModel implements ITmfXyModel {
         return max;
     }
 
+    /**
+     * @param value
+     *            Value to be converted
+     * @return Corresponding double value
+     */
     public static double fromFixedPoint(long value) {
         return ((double) value) / FIXED_POINT_MULTIPLIER;
     }
 
+    /**
+     * @param value
+     *            Value to be converted
+     * @return Corresponding fixed point value
+     */
     public static long toFixedPoint(double value) {
         return (long) (value * FIXED_POINT_MULTIPLIER);
     }
 
+    /**
+     * @brief Converts an array of fixed point values to their double floating
+     *        point equivalent
+     *
+     * @param values
+     *            Values to be converted
+     * @return Converted array
+     */
     public static double[] fromFixedPointArray(long[] values) {
         double[] array = new double[values.length];
         for (int i = 0; i < values.length; ++i) {
