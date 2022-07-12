@@ -90,7 +90,6 @@ public class GpuRooflineAnalysisDataProvider extends AbstractTreeDataProvider<Gp
         GpuRooflineAnalysis module = getAnalysisModule();
         GpuInfo gpuInfo = module.getGpuInfo();
 
-        List<Integer> quarks = new ArrayList<>();
 
         ITmfStateSystem ss = module.getStateSystem();
         if (ss == null) {
@@ -99,23 +98,47 @@ public class GpuRooflineAnalysisDataProvider extends AbstractTreeDataProvider<Gp
                     CommonStatusMessage.ANALYSIS_INITIALIZATION_FAILED);
         }
 
-        try {
-            quarks.add(ss.getQuarkAbsolute(GpuRooflineStateProvider.FLOPS_ATTRIBUTE_NAME));
-        } catch (AttributeNotFoundException e1) {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
-        }
+        int flopsQuark, loadsQuark, storesQuark;
 
         try {
-            for (ITmfStateInterval interval : ss.query2D(quarks, ss.getStartTime(), ss.getCurrentEndTime())) {
+            flopsQuark = ss.getQuarkAbsolute(GpuRooflineStateProvider.FLOPS_ATTRIBUTE_NAME);
+            loadsQuark = ss.getQuarkAbsolute(GpuRooflineStateProvider.LOADS_ATTRIBUTE_NAME);
+            storesQuark = ss.getQuarkAbsolute(GpuRooflineStateProvider.STORES_ATTRIBUTE_NAME);
+
+        } catch (AttributeNotFoundException e1) {
+            return new TmfModelResponse<>(null,
+                    ITmfResponse.Status.FAILED,
+                    CommonStatusMessage.ANALYSIS_INITIALIZATION_FAILED);
+        }
+
+        List<RooflineXYModel.Point> rooflinePoints = new ArrayList<>();
+
+        try {
+            for (ITmfStateInterval interval : ss.query2D(List.of(flopsQuark), ss.getStartTime(), ss.getCurrentEndTime())) {
                 long flops = interval.getValueLong();
+                if (flops != 0L) {
+                    long duration = interval.getEndTime() - interval.getStartTime();
+
+                    double attainedPerf = flops / toSeconds(duration);
+
+                    // Get bytes
+                    long loadedBytes = ss.querySingleState(interval.getStartTime(), loadsQuark).getValueLong();
+                    long storedBytes = ss.querySingleState(interval.getStartTime(), storesQuark).getValueLong();
+
+                    long totalAccessed = loadedBytes + storedBytes;
+
+                    double operationalIntensity = (double)flops / (double)totalAccessed;
+
+                    rooflinePoints.add(new RooflineXYModel.Point(operationalIntensity, attainedPerf));
+                }
             }
         } catch (IndexOutOfBoundsException | TimeRangeException | StateSystemDisposedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            return new TmfModelResponse<>(null,
+                    ITmfResponse.Status.FAILED,
+                    CommonStatusMessage.STATE_SYSTEM_FAILED);
         }
 
-        return new TmfModelResponse<>(new RooflineXYModel("Roofline", gpuInfo, Collections.EMPTY_LIST), Status.COMPLETED, CommonStatusMessage.COMPLETED); //$NON-NLS-1$
+        return new TmfModelResponse<>(new RooflineXYModel("Roofline", gpuInfo, rooflinePoints), Status.COMPLETED, CommonStatusMessage.COMPLETED); //$NON-NLS-1$
     }
 
     @Override
@@ -146,6 +169,12 @@ public class GpuRooflineAnalysisDataProvider extends AbstractTreeDataProvider<Gp
         // corresponding to roofline entries
 
         return new TmfTreeModel<>(Collections.emptyList(), Collections.emptyList());
+    }
+
+
+
+    private static double toSeconds(long nanosecDuration) {
+        return (nanosecDuration) / 1e9d;
     }
 
 }

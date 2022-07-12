@@ -35,6 +35,11 @@ public class RooflineXYModel implements ITmfXyModel {
 
     public static class Point {
         public double x, y;
+
+        public Point(double _x, double _y) {
+            x = _x;
+            y = _y;
+        }
     }
 
     public RooflineXYModel(String _title, GpuInfo gpuInfo, Collection<Point> _executionTimes) {
