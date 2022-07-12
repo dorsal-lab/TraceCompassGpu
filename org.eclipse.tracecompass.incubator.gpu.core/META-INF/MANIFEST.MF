@@ -19,4 +19,5 @@ Export-Package: org.eclipse.tracecompass.incubator.gpu.analysis,
  org.eclipse.tracecompass.incubator.gpu.core.trace,
  org.eclipse.tracecompass.incubator.internal.gpu.core;x-friends:="org.eclipse.tracecompass.incubator.gpu.core.tests"
 Automatic-Module-Name: org.eclipse.tracecompass.incubator.gpu.core
-Import-Package: org.eclipse.tracecompass.tmf.ui.analysis
+Import-Package: org.eclipse.tracecompass.tmf.ctf.core.trace,
+ org.eclipse.tracecompass.tmf.ui.analysis

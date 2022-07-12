@@ -19,6 +19,7 @@ import org.eclipse.tracecompass.tmf.core.statesystem.AbstractTmfStateProvider;
 import org.eclipse.tracecompass.tmf.core.statesystem.ITmfStateProvider;
 import org.eclipse.tracecompass.tmf.core.trace.ITmfTrace;
 import org.eclipse.tracecompass.tmf.core.util.Pair;
+import org.eclipse.tracecompass.tmf.ctf.core.trace.CtfTmfTrace;
 
 /**
  * @author Sébastien Darche <sebastien.darche@polymtl.ca>
@@ -43,6 +44,19 @@ public class GpuRooflineStateProvider extends AbstractTmfStateProvider {
     private int flopsQuark = DEFAULT_QUARK;
     private int loadsQuark = DEFAULT_QUARK;
     private int storesQuark = DEFAULT_QUARK;
+
+    /**
+     * State system attribute name for flop counter
+     */
+    public static String FLOPS_ATTRIBUTE_NAME = "flops"; //$NON-NLS-1$
+    /**
+     * State system attribute name for loaded bytes
+     */
+    public static String LOADS_ATTRIBUTE_NAME = "floating_ld"; //$NON-NLS-1$
+    /**
+     * State system attribute name for stores bytes
+     */
+    public static String STORES_ATTRIBUTE_NAME = "floating_s"; //$NON-NLS-1$
 
     private Map<Pair<String, Long>, String> functionMap;
 
@@ -98,30 +112,36 @@ public class GpuRooflineStateProvider extends AbstractTmfStateProvider {
             initQuarks();
         }
 
-        switch (event.getType().getName()) {
-        case HipTrace.HIPTRACE_NAME:
+        ITmfTrace trace = event.getTrace();
+
+        if (trace instanceof HipTrace) {
             handleHipTraceEvent(event);
-            break;
-        // HSA
-        case "hsa_function_name": //$NON-NLS-1$
-            handlefunctionNameEvent(event, APIType.HSA_API);
-            break;
-        case "hsa_api": //$NON-NLS-1$
-            handleHsaApiEvent(event);
-            break;
-        case "hip_function_name": //$NON-NLS-1$
-            handlefunctionNameEvent(event, APIType.HIP_API);
-            break;
-        case "hip_activity": //$NON-NLS-1$
-            break;
-        case "hip_api": //$NON-NLS-1$
-            handleHipApiEvent(event);
-            break;
-        case "kernel_event": //$NON-NLS-1$
-            handleKernelEvent(event);
-            break;
-        default:
-            break;
+        } else if (trace instanceof CtfTmfTrace){
+            switch (event.getType().getName()) {
+            // HSA
+            case "hsa_function_name": //$NON-NLS-1$
+                handlefunctionNameEvent(event, APIType.HSA_API);
+                break;
+            case "hsa_api": //$NON-NLS-1$
+                handleHsaApiEvent(event);
+                break;
+            // HIP
+            case "hip_function_name": //$NON-NLS-1$
+                handlefunctionNameEvent(event, APIType.HIP_API);
+                break;
+            case "hip_activity": //$NON-NLS-1$
+                break;
+            case "hip_api": //$NON-NLS-1$
+                handleHipApiEvent(event);
+                break;
+            case "kernel_event": //$NON-NLS-1$
+                handleKernelEvent(event);
+                break;
+            default:
+                break;
+            }
+        } else {
+            // Nothing to do
         }
 
     }
@@ -132,9 +152,9 @@ public class GpuRooflineStateProvider extends AbstractTmfStateProvider {
     protected void initQuarks() {
         ITmfStateSystemBuilder ss = Objects.requireNonNull(getStateSystemBuilder());
 
-        flopsQuark = ss.getQuarkAbsoluteAndAdd("flops"); //$NON-NLS-1$
-        loadsQuark = ss.getQuarkAbsoluteAndAdd("floating_ld"); //$NON-NLS-1$
-        storesQuark = ss.getQuarkAbsoluteAndAdd("floating_s"); //$NON-NLS-1$
+        flopsQuark = ss.getQuarkAbsoluteAndAdd(FLOPS_ATTRIBUTE_NAME);
+        loadsQuark = ss.getQuarkAbsoluteAndAdd(LOADS_ATTRIBUTE_NAME);
+        storesQuark = ss.getQuarkAbsoluteAndAdd(STORES_ATTRIBUTE_NAME);
     }
 
     /**

@@ -3,7 +3,9 @@
  */
 package org.eclipse.tracecompass.incubator.gpu.analysis;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -13,7 +15,10 @@ import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.tracecompass.incubator.gpu.core.trace.GpuInfo;
 import org.eclipse.tracecompass.internal.tmf.core.model.tree.AbstractTreeDataProvider;
 import org.eclipse.tracecompass.statesystem.core.ITmfStateSystem;
+import org.eclipse.tracecompass.statesystem.core.exceptions.AttributeNotFoundException;
 import org.eclipse.tracecompass.statesystem.core.exceptions.StateSystemDisposedException;
+import org.eclipse.tracecompass.statesystem.core.exceptions.TimeRangeException;
+import org.eclipse.tracecompass.statesystem.core.interval.ITmfStateInterval;
 import org.eclipse.tracecompass.tmf.core.model.CommonStatusMessage;
 import org.eclipse.tracecompass.tmf.core.model.tree.ITmfTreeDataModel;
 import org.eclipse.tracecompass.tmf.core.model.tree.ITmfTreeDataProvider;
@@ -22,6 +27,7 @@ import org.eclipse.tracecompass.tmf.core.model.tree.TmfTreeModel;
 import org.eclipse.tracecompass.tmf.core.model.xy.ITmfTreeXYDataProvider;
 import org.eclipse.tracecompass.tmf.core.model.xy.ITmfXyModel;
 import org.eclipse.tracecompass.tmf.core.response.TmfModelResponse;
+import org.eclipse.tracecompass.tmf.core.response.ITmfResponse;
 import org.eclipse.tracecompass.tmf.core.response.ITmfResponse.Status;
 import org.eclipse.tracecompass.tmf.core.trace.ITmfTrace;
 import org.eclipse.tracecompass.tmf.core.trace.TmfTraceUtils;
@@ -83,6 +89,31 @@ public class GpuRooflineAnalysisDataProvider extends AbstractTreeDataProvider<Gp
          */
         GpuRooflineAnalysis module = getAnalysisModule();
         GpuInfo gpuInfo = module.getGpuInfo();
+
+        List<Integer> quarks = new ArrayList<>();
+
+        ITmfStateSystem ss = module.getStateSystem();
+        if (ss == null) {
+            return new TmfModelResponse<>(null,
+                    ITmfResponse.Status.FAILED,
+                    CommonStatusMessage.ANALYSIS_INITIALIZATION_FAILED);
+        }
+
+        try {
+            quarks.add(ss.getQuarkAbsolute(GpuRooflineStateProvider.FLOPS_ATTRIBUTE_NAME));
+        } catch (AttributeNotFoundException e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+        }
+
+        try {
+            for (ITmfStateInterval interval : ss.query2D(quarks, ss.getStartTime(), ss.getCurrentEndTime())) {
+                long flops = interval.getValueLong();
+            }
+        } catch (IndexOutOfBoundsException | TimeRangeException | StateSystemDisposedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
 
         return new TmfModelResponse<>(new RooflineXYModel("Roofline", gpuInfo, Collections.EMPTY_LIST), Status.COMPLETED, CommonStatusMessage.COMPLETED); //$NON-NLS-1$
     }
