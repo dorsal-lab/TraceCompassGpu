@@ -116,7 +116,7 @@ public class GpuRooflineStateProvider extends AbstractTmfStateProvider {
 
         if (trace instanceof HipTrace) {
             handleHipTraceEvent(event);
-        } else if (trace instanceof CtfTmfTrace){
+        } else if (trace instanceof CtfTmfTrace) {
             switch (event.getType().getName()) {
             // HSA
             case "hsa_function_name": //$NON-NLS-1$
@@ -185,7 +185,7 @@ public class GpuRooflineStateProvider extends AbstractTmfStateProvider {
     }
 
     /**
-     * Handles a name definition event ("<api>_function_name") from the ROCm
+     * Handles a name definition event ("\<api\>_function_name") from the ROCm
      * trace
      *
      * @param event
@@ -254,8 +254,13 @@ public class GpuRooflineStateProvider extends AbstractTmfStateProvider {
             // Update state system
 
             ITmfStateSystemBuilder ss = Objects.requireNonNull(getStateSystemBuilder());
+            CtfTmfTrace trace = (CtfTmfTrace) lastKernelCall.getTrace();
 
             long ts = (Long) lastKernelCall.getContent().getField("end").getValue(); //$NON-NLS-1$
+            ts += trace.getOffset(); // The "end" attribute does not take into
+                                     // account the offset of the trace, add it
+                                     // back here
+
             ss.modifyAttribute(ts, 0L, flopsQuark);
             ss.modifyAttribute(ts, 0L, loadsQuark);
             ss.modifyAttribute(ts, 0L, storesQuark);
