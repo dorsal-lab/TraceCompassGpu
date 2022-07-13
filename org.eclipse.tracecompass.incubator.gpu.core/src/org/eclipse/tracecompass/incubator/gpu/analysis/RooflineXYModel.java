@@ -20,7 +20,7 @@ public class RooflineXYModel implements ITmfXyModel {
     private final Collection<Point> executionTimes;
     private String title;
 
-    public static final double ROOFLINE_X_MIN = 0.083333;
+    public static final double ROOFLINE_X_MIN = 0.0625;
     public static final double ROOFLINE_X_MAX = 16;
     public static final double ROOFLINE_Y_MIN = 0.5;
     public static final double ROOFLINE_Y_MAX = 128;
