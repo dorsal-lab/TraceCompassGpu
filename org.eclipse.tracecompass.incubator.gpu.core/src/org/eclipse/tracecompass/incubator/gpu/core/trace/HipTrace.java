@@ -56,22 +56,38 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
     private long roctracerEnd;
     private short sizeofCounter;
     private KernelConfiguration configuration;
+    private boolean managed;
 
     /**
      * @brief Number of expected tokens in header
      */
-    private static final int HEADER_TOKENS = 7;
+    private static final int COUNTER_HEADER_TOKENS = 7;
 
     /**
-     * @brief Expected file header, identifying a hiptrace
+     * @brief Expected counters header, identifying a single hiptrace counters
+     *        dump
      */
-    public static final String HIPTRACE_NAME = "hiptrace"; //$NON-NLS-1$
+    public static final String HIPTRACE_COUNTERS_NAME = "hiptrace_counters"; //$NON-NLS-1$
+
+    /**
+     * @brief Expected global file header, identifying a hiptrace counters
+     *        cluster
+     */
+    public static final String HIPTRACE_MANAGED_NAME = "hiptrace_managed"; //$NON-NLS-1$
+
+    /**
+     * @brief Expected events header
+     */
+    public static final String HIPTRACE_EVENTS_NAME = "hiptrace_events"; //$NON-NLS-1$
 
     /**
      * @brief Trace buffered read size
      */
     private static final int BUFFER_SIZE = 4096;
 
+    /**
+     * @brief Unary constructor
+     */
     public HipTrace() {
         super();
     }
@@ -160,7 +176,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
                 final TmfEventField content = new TmfEventField(
                         ITmfEventField.ROOT_FIELD_ID, null, fields);
 
-                event = new TmfEvent(this, pos, TmfTimestamp.fromNanos(roctracerEnd), new TmfEventType(HIPTRACE_NAME, content), content);
+                event = new TmfEvent(this, pos, TmfTimestamp.fromNanos(roctracerEnd), new TmfEventType(HIPTRACE_COUNTERS_NAME, content), content);
 
             } catch (IOException e) {
             }
@@ -236,55 +252,58 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
             return false;
         }
 
-        if(header == null) {
+        if (header == null) {
             return false;
         }
 
         fOffset = header.length() + 1;
 
-        String[] tokens = header.split(",", HEADER_TOKENS); //$NON-NLS-1$
+        String[] tokens = header.split(",", COUNTER_HEADER_TOKENS); //$NON-NLS-1$
 
-        if (tokens.length < HEADER_TOKENS) {
+        if (tokens.length == 1 && tokens[0].equals(HIPTRACE_MANAGED_NAME)) {
+            // Trace created by hip::HipTraceManager
+            managed = true;
+            return true;
+        } else if (tokens.length == COUNTER_HEADER_TOKENS && tokens[0].equals(HIPTRACE_COUNTERS_NAME)) {
+            // Single kernel execution, create by hip::Instrumenter::dumpBin()
+            managed = false;
+            kernelName = tokens[1];
+
+            try {
+                instrSize = Integer.parseInt(tokens[2]);
+            } catch (NumberFormatException e) {
+                return false;
+            }
+
+            try {
+                stamp = Long.parseLong(tokens[3]);
+            } catch (NumberFormatException e) {
+                return false;
+            }
+
+            try {
+                roctracerBegin = Long.parseLong(tokens[4]);
+            } catch (NumberFormatException e) {
+                return false;
+            }
+
+            try {
+                roctracerEnd = Long.parseLong(tokens[5]);
+            } catch (NumberFormatException e) {
+                return false;
+            }
+
+            try {
+                sizeofCounter = Short.parseShort(tokens[6]);
+            } catch (NumberFormatException e) {
+                return false;
+            }
+
+            return true;
+        } else {
             return false;
         }
 
-        if (!tokens[0].equals(HIPTRACE_NAME)) {
-            return false;
-        }
-
-        kernelName = tokens[1];
-
-        try {
-            instrSize = Integer.parseInt(tokens[2]);
-        } catch (NumberFormatException e) {
-            return false;
-        }
-
-        try {
-            stamp = Long.parseLong(tokens[3]);
-        } catch (NumberFormatException e) {
-            return false;
-        }
-
-        try {
-            roctracerBegin = Long.parseLong(tokens[4]);
-        } catch (NumberFormatException e) {
-            return false;
-        }
-
-        try {
-            roctracerEnd = Long.parseLong(tokens[5]);
-        } catch (NumberFormatException e) {
-            return false;
-        }
-
-        try {
-            sizeofCounter = Short.parseShort(tokens[6]);
-        } catch (NumberFormatException e) {
-            return false;
-        }
-
-        return true;
     }
 
     private void seek(long rank) throws IOException {
