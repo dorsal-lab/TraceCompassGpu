@@ -103,7 +103,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
             return new Status(IStatus.ERROR, Activator.PLUGIN_ID, "Path is not a file"); //$NON-NLS-1$
         }
 
-        if (!parseHeader(f)) {
+        if (!parseFileHeader(f)) {
             return new Status(IStatus.ERROR, Activator.PLUGIN_ID, "Could not parse trace header"); //$NON-NLS-1$
         }
 
@@ -129,7 +129,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
         fFile = new File(path);
         fSize = fFile.length();
 
-        if (!parseHeader(fFile)) {
+        if (!parseFileHeader(fFile)) {
             throw new TmfTraceException("Invalid trace header"); //$NON-NLS-1$
         }
 
@@ -244,7 +244,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
 
     // ----- GPU Counters specific methods ----- //
 
-    private boolean parseHeader(File f) {
+    private boolean parseFileHeader(File f) {
         String header = new String();
         try (BufferedReader br = new BufferedReader(new FileReader(f));) {
             header = br.readLine();
@@ -267,43 +267,48 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
         } else if (tokens.length == COUNTER_HEADER_TOKENS && tokens[0].equals(HIPTRACE_COUNTERS_NAME)) {
             // Single kernel execution, create by hip::Instrumenter::dumpBin()
             managed = false;
-            kernelName = tokens[1];
-
-            try {
-                instrSize = Integer.parseInt(tokens[2]);
-            } catch (NumberFormatException e) {
-                return false;
-            }
-
-            try {
-                stamp = Long.parseLong(tokens[3]);
-            } catch (NumberFormatException e) {
-                return false;
-            }
-
-            try {
-                roctracerBegin = Long.parseLong(tokens[4]);
-            } catch (NumberFormatException e) {
-                return false;
-            }
-
-            try {
-                roctracerEnd = Long.parseLong(tokens[5]);
-            } catch (NumberFormatException e) {
-                return false;
-            }
-
-            try {
-                sizeofCounter = Short.parseShort(tokens[6]);
-            } catch (NumberFormatException e) {
-                return false;
-            }
-
-            return true;
+            return parseCountersHeader(header);
         } else {
             return false;
         }
 
+    }
+
+    private boolean parseCountersHeader(String header) {
+        String[] tokens = header.split(",", COUNTER_HEADER_TOKENS); //$NON-NLS-1$
+        kernelName = tokens[1];
+
+        try {
+            instrSize = Integer.parseInt(tokens[2]);
+        } catch (NumberFormatException e) {
+            return false;
+        }
+
+        try {
+            stamp = Long.parseLong(tokens[3]);
+        } catch (NumberFormatException e) {
+            return false;
+        }
+
+        try {
+            roctracerBegin = Long.parseLong(tokens[4]);
+        } catch (NumberFormatException e) {
+            return false;
+        }
+
+        try {
+            roctracerEnd = Long.parseLong(tokens[5]);
+        } catch (NumberFormatException e) {
+            return false;
+        }
+
+        try {
+            sizeofCounter = Short.parseShort(tokens[6]);
+        } catch (NumberFormatException e) {
+            return false;
+        }
+
+        return true;
     }
 
     private void seek(long rank) throws IOException {
