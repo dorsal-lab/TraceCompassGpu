@@ -3,9 +3,9 @@ package org.eclipse.tracecompass.incubator.gpu.core.trace;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -68,9 +68,14 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
     private Map<Long, Long> offsetsMap;
 
     /**
-     * @brief Number of expected tokens in header
+     * @brief Number of expected tokens in header, with the kernel info
      */
-    private static final int COUNTER_HEADER_TOKENS = 7;
+    private static final int COUNTER_HEADER_TOKENS = 15;
+
+    /**
+     * @brief Number of expected tokens in header, without kernel info
+     */
+    private static final int COUNTER_HEADER_TOKENS_NO_KI = 7;
 
     /**
      * @brief Expected counters header, identifying a single hiptrace counters
@@ -102,7 +107,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
     /**
      * @brief Trace buffered read size
      */
-    private static final int BUFFER_SIZE = 4096;
+    private static final int BUFFER_SIZE = 32768;
 
     private static class CountersHeader {
         public final String kernelName;
@@ -113,14 +118,14 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
         public final long sizeofCounter;
         public final KernelConfiguration configuration;
 
-        public CountersHeader(String kernelName, long numCounters, long stamp, long roctracerBegin, long roctracerEnd, long sizeofCounter) {
+        public CountersHeader(String kernelName, long numCounters, long stamp, long roctracerBegin, long roctracerEnd, long sizeofCounter, KernelConfiguration configuration) {
             this.kernelName = kernelName;
             this.numCounters = numCounters;
             this.stamp = stamp;
             this.roctracerBegin = roctracerBegin;
             this.roctracerEnd = roctracerEnd;
             this.sizeofCounter = sizeofCounter;
-            this.configuration = new KernelConfiguration();
+            this.configuration = configuration;
         }
 
         public long totalSize() {
@@ -248,13 +253,17 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
     }
 
     private TmfEvent parseCountersEvent(CountersHeader header, long offset, long rank) {
-        List<TmfEventField> eventFields = new ArrayList<>();
+        List<TmfEventField> eventFields = new ArrayList<TmfEventField>((int) header.numCounters);
         try {
             seek(offset);
         } catch (IOException e) {
             return null;
         }
 
+
+        final KernelConfiguration configuration = header.configuration;
+
+        int elem = 0;
         for (long pos = offset; pos < header.totalSize(); pos += header.sizeofCounter) {
             try {
                 if (fMappedByteBuffer.position() + header.sizeofCounter > fMappedByteBuffer.limit()) {
@@ -270,11 +279,10 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
                 counter += b << (i * 8);
             }
 
-            final KernelConfiguration configuration = header.configuration;
 
-            long bblock = pos % configuration.bblocks;
-            long thread = pos % (configuration.bblocks * configuration.geometry.threads.x);
-            long block = pos % (configuration.bblocks * configuration.geometry.threads.x * configuration.geometry.blocks.x);
+            long bblock = elem % configuration.bblocks;
+            long thread = elem % (configuration.bblocks * configuration.geometry.threads.x);
+            long block = elem % (configuration.bblocks * configuration.geometry.threads.x * configuration.geometry.blocks.x);
 
             final TmfEventField[] counterFields = {
                     new TmfEventField("counter", counter, null), //$NON-NLS-1$
@@ -286,6 +294,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
             eventFields.add(new TmfEventField(
                     HIPTRACE_COUNTERS_COUNTER, null, counterFields));
 
+            ++elem;
         }
 
         final TmfEventField root = new TmfEventField(ITmfEventField.ROOT_FIELD_ID, null, (TmfEventField[]) eventFields.toArray());
@@ -293,7 +302,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
         return new TmfEvent(this, rank, TmfTimestamp.fromNanos(header.roctracerEnd), new TmfEventType(HIPTRACE_COUNTERS_NAME, root), root);
     }
 
-    private TmfEvent parseEventsHeader(EventsHeader header) {
+    static private TmfEvent parseEventsHeader(EventsHeader header) {
         return null;
     }
 
@@ -369,7 +378,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
             // Trace created by hip::HipTraceManager
             managed = true;
             return true;
-        } else if (tokens.length == COUNTER_HEADER_TOKENS && tokens[0].equals(HIPTRACE_COUNTERS_NAME)) {
+        } else if (tokens[0].equals(HIPTRACE_COUNTERS_NAME)) {
             // Single kernel execution, create by hip::Instrumenter::dumpBin()
             managed = false;
             CountersHeader counterHeader = parseCountersHeader(header);
@@ -381,7 +390,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
 
     }
 
-    static private @Nullable CountersHeader parseCountersHeader(String header) {
+    private @Nullable CountersHeader parseCountersHeader(String header) {
         String kernelName;
         int instrSize;
         long stamp;
@@ -422,7 +431,16 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
             return null;
         }
 
-        return new CountersHeader(kernelName, instrSize, stamp, roctracerBegin, roctracerEnd, sizeofCounter);
+        KernelConfiguration configuration;
+        if (tokens.length == COUNTER_HEADER_TOKENS) {
+            // Call configuration embedded in the header
+            configuration = KernelConfiguration.deserializeCsv(kernelName, Arrays.copyOfRange(tokens, COUNTER_HEADER_TOKENS_NO_KI, tokens.length));
+        } else {
+            // The kernel conf file must have the same name as the trace file + .json (legacy version)
+            configuration = KernelConfiguration.deserialize(Path.of(fFile.toPath() + ".json")); //$NON-NLS-1$
+        }
+        return new CountersHeader(kernelName, instrSize, stamp, roctracerBegin, roctracerEnd, sizeofCounter, configuration);
+
     }
 
     static private @Nullable EventsHeader parseEventsHeader(String header) {
@@ -430,7 +448,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
         return null;
     }
 
-    static private @Nullable Object readHeader(String header) {
+    private @Nullable Object readHeader(String header) {
         String[] tokens = header.split(","); //$NON-NLS-1$
 
         switch (tokens[0]) {

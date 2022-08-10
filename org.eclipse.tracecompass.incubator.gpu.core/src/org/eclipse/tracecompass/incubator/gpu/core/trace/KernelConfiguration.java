@@ -110,4 +110,43 @@ public class KernelConfiguration {
         Gson gson = new Gson();
         return gson.fromJson(json, KernelConfiguration.class);
     }
+
+    public static @Nullable KernelConfiguration deserializeCsv(String kernelName, String[] header) {
+        if (header == null) {
+            return null;
+        }
+
+        if (!header[0].equals("kernel_info")) {
+            return null;
+        }
+
+        if (header.length != 8) {
+            return null;
+        }
+
+        KernelConfiguration conf = new KernelConfiguration();
+
+        conf.name = kernelName;
+        try {
+            conf.bblocks = Integer.parseInt(header[1]);
+
+            int bx = Integer.parseInt(header[2]);
+            int by = Integer.parseInt(header[3]);
+            int bz = Integer.parseInt(header[4]);
+
+            Dim3 blocks = new Dim3(bx, by, bz);
+
+            int tx = Integer.parseInt(header[5]);
+            int ty = Integer.parseInt(header[6]);
+            int tz = Integer.parseInt(header[7]);
+
+            Dim3 threads = new Dim3(tx, ty, tz);
+
+            conf.geometry = new Geometry(threads, blocks);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+
+        return conf;
+    }
 }
