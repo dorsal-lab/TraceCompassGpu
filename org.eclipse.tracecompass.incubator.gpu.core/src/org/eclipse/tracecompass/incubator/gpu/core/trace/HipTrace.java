@@ -5,7 +5,9 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.io.BufferedReader;
 import java.io.File;
@@ -88,6 +90,16 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
     public static final String HIPTRACE_EVENTS_NAME = "hiptrace_events"; //$NON-NLS-1$
 
     /**
+     * @brief TmfEvent : event root for counters aggregate
+     */
+    public static final String HIPTRACE_COUNTERS_ROOT = "hiptrace_counters"; //$NON-NLS-1$
+
+    /**
+     * @brief TmfEvent : counters event
+     */
+    public static final String HIPTRACE_COUNTERS_COUNTER = "hiptrace_counter"; //$NON-NLS-1$
+
+    /**
      * @brief Trace buffered read size
      */
     private static final int BUFFER_SIZE = 4096;
@@ -99,6 +111,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
         public final long roctracerBegin;
         public final long roctracerEnd;
         public final long sizeofCounter;
+        public final KernelConfiguration configuration;
 
         public CountersHeader(String kernelName, long numCounters, long stamp, long roctracerBegin, long roctracerEnd, long sizeofCounter) {
             this.kernelName = kernelName;
@@ -107,6 +120,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
             this.roctracerBegin = roctracerBegin;
             this.roctracerEnd = roctracerEnd;
             this.sizeofCounter = sizeofCounter;
+            this.configuration = new KernelConfiguration();
         }
 
         public long totalSize() {
@@ -158,7 +172,8 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
          * "Wrong data size, different from header"); //$NON-NLS-1$ }
          */
 
-        configuration = KernelConfiguration.deserialize(Path.of(path + ".json")); //$NON-NLS-1$
+        // configuration = KernelConfiguration.deserialize(Path.of(path +
+        // ".json")); //$NON-NLS-1$
 
         return new TraceValidationStatus(100, Activator.PLUGIN_ID);
     }
@@ -173,7 +188,8 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
             throw new TmfTraceException("Invalid trace header"); //$NON-NLS-1$
         }
 
-        configuration = KernelConfiguration.deserialize(Path.of(path + ".json")); //$NON-NLS-1$
+        // configuration = KernelConfiguration.deserialize(Path.of(path +
+        // ".json")); //$NON-NLS-1$
 
         try {
             stream = new FileInputStream(fFile);
@@ -183,7 +199,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
         }
 
         if (!initMap()) {
-            throw new TmfTraceException("Could not read trace events offsets");
+            throw new TmfTraceException("Could not read trace events offsets"); //$NON-NLS-1$
         }
 
         fCurrent = new TmfLongLocation(0L);
@@ -192,37 +208,32 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
     @Override
     public synchronized ITmfEvent getNext(ITmfContext context) {
         TmfEvent event = null;
-        long pos = context.getRank();
+        long rank = context.getRank();
 
-        if (pos < instrSize) {
-            try {
-                if (fMappedByteBuffer.position() + sizeofCounter > fMappedByteBuffer.limit()) {
-                    seek(pos);
-                }
-
-                long counter = 0;
-                for (int i = 0; i < sizeofCounter; ++i) {
-                    byte b = fMappedByteBuffer.get();
-                    counter += b << (i * 8);
-                }
-
-                long bblock = pos % configuration.bblocks;
-                long thread = pos % (configuration.bblocks * configuration.geometry.threads.x);
-                long block = pos % (configuration.bblocks * configuration.geometry.threads.x * configuration.geometry.blocks.x);
-
-                final TmfEventField[] fields = {
-                        new TmfEventField("counter", counter, null), //$NON-NLS-1$
-                        new TmfEventField("bblock", bblock, null), //$NON-NLS-1$
-                        new TmfEventField("thread", thread, null), //$NON-NLS-1$
-                        new TmfEventField("block", block, null) //$NON-NLS-1$
-                };
-
-                final TmfEventField content = new TmfEventField(
-                        ITmfEventField.ROOT_FIELD_ID, null, fields);
-
-                event = new TmfEvent(this, pos, TmfTimestamp.fromNanos(roctracerEnd), new TmfEventType(HIPTRACE_COUNTERS_NAME, content), content);
-
+        // Read header
+        Long offset = offsetsMap.get(rank);
+        if (offset != null) {
+            String header = new String();
+            try (BufferedReader br = new BufferedReader(new FileReader(fFile));) {
+                br.skip(offset);
+                header = br.readLine();
             } catch (IOException e) {
+                return null;
+            }
+
+            if (header == null) {
+                return null;
+            }
+
+            Object parsedHeader = readHeader(header);
+
+            if (parsedHeader instanceof CountersHeader) {
+                long dataOffset = offset + header.length() + 1;
+                event = parseCountersEvent((CountersHeader) parsedHeader, dataOffset, rank);
+            } else if (parsedHeader instanceof EventsHeader) {
+                event = parseEventsHeader((EventsHeader) parsedHeader);
+            } else {
+                // What to do ?
             }
         }
 
@@ -236,6 +247,56 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
         return event;
     }
 
+    private TmfEvent parseCountersEvent(CountersHeader header, long offset, long rank) {
+        List<TmfEventField> eventFields = new ArrayList<>();
+        try {
+            seek(offset);
+        } catch (IOException e) {
+            return null;
+        }
+
+        for (long pos = offset; pos < header.totalSize(); pos += header.sizeofCounter) {
+            try {
+                if (fMappedByteBuffer.position() + header.sizeofCounter > fMappedByteBuffer.limit()) {
+                    seek(pos);
+                }
+            } catch (IOException e) {
+                return null;
+            }
+
+            long counter = 0;
+            for (int i = 0; i < header.sizeofCounter; ++i) {
+                byte b = fMappedByteBuffer.get();
+                counter += b << (i * 8);
+            }
+
+            final KernelConfiguration configuration = header.configuration;
+
+            long bblock = pos % configuration.bblocks;
+            long thread = pos % (configuration.bblocks * configuration.geometry.threads.x);
+            long block = pos % (configuration.bblocks * configuration.geometry.threads.x * configuration.geometry.blocks.x);
+
+            final TmfEventField[] counterFields = {
+                    new TmfEventField("counter", counter, null), //$NON-NLS-1$
+                    new TmfEventField("bblock", bblock, null), //$NON-NLS-1$
+                    new TmfEventField("thread", thread, null), //$NON-NLS-1$
+                    new TmfEventField("block", block, null) //$NON-NLS-1$
+            };
+
+            eventFields.add(new TmfEventField(
+                    HIPTRACE_COUNTERS_COUNTER, null, counterFields));
+
+        }
+
+        final TmfEventField root = new TmfEventField(ITmfEventField.ROOT_FIELD_ID, null, (TmfEventField[]) eventFields.toArray());
+
+        return new TmfEvent(this, rank, TmfTimestamp.fromNanos(header.roctracerEnd), new TmfEventType(HIPTRACE_COUNTERS_NAME, root), root);
+    }
+
+    private TmfEvent parseEventsHeader(EventsHeader header) {
+        return null;
+    }
+
     @Override
     public ITmfLocation getCurrentLocation() {
         return fCurrent;
@@ -244,7 +305,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
     @Override
     public double getLocationRatio(ITmfLocation location) {
         TmfLongLocation loc = (TmfLongLocation) location;
-        return loc.getLocationInfo().doubleValue() / instrSize;
+        return loc.getLocationInfo().doubleValue() / fSize;
     }
 
     @Override
@@ -266,7 +327,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
 
     @Override
     public ITmfContext seekEvent(double ratio) {
-        TmfLongLocation loc = new TmfLongLocation((long) ratio * instrSize);
+        TmfLongLocation loc = new TmfLongLocation((long) ratio * offsetsMap.size());
 
         return seekEvent(loc);
     }
@@ -320,7 +381,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
 
     }
 
-    private @Nullable CountersHeader parseCountersHeader(String header) {
+    static private @Nullable CountersHeader parseCountersHeader(String header) {
         String kernelName;
         int instrSize;
         long stamp;
@@ -364,9 +425,22 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
         return new CountersHeader(kernelName, instrSize, stamp, roctracerBegin, roctracerEnd, sizeofCounter);
     }
 
-    private @Nullable EventsHeader parseEventsHeader(String header) {
+    static private @Nullable EventsHeader parseEventsHeader(String header) {
         // TODO
         return null;
+    }
+
+    static private @Nullable Object readHeader(String header) {
+        String[] tokens = header.split(","); //$NON-NLS-1$
+
+        switch (tokens[0]) {
+        case HIPTRACE_COUNTERS_NAME:
+            return parseCountersHeader(header);
+        case HIPTRACE_EVENTS_NAME:
+            return parseEventsHeader(header);
+        default:
+            return null;
+        }
     }
 
     private boolean initMap() {
@@ -375,7 +449,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
         offsetsMap = new HashMap<>();
 
         if (!managed) {
-            offsetsMap.put(0L, (long) fOffset);
+            offsetsMap.put(0L, 0L);
         } else {
             long i = 0L;
             long offset = fOffset;
@@ -394,28 +468,21 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
                     return false;
                 }
 
-                String[] tokens = header.split(",", 1); //$NON-NLS-1$
+                Object parsedHeader = readHeader(header);
 
-                switch (tokens[0]) {
-                case HIPTRACE_COUNTERS_NAME:
-                    CountersHeader countersHeader = parseCountersHeader(header);
-                    if (countersHeader == null) {
-                        return false;
-                    }
-                    offset += countersHeader.totalSize() + header.length();
-                    break;
-                case HIPTRACE_EVENTS_NAME:
-                    EventsHeader eventsHeader = parseEventsHeader(header);
-                    if(eventsHeader == null) {
-                        return false;
-                    }
-
-                    offset += eventsHeader.totalSize + header.length();
-                    break;
-                default:
+                if (parsedHeader == null) {
                     return false;
                 }
 
+                if (parsedHeader instanceof CountersHeader) {
+                    CountersHeader countersHeader = (CountersHeader) parsedHeader;
+                    offset += countersHeader.totalSize() + header.length();
+                } else if (parsedHeader instanceof EventsHeader) {
+                    EventsHeader eventsHeader = (EventsHeader) parsedHeader;
+                    offset += eventsHeader.totalSize + header.length();
+                } else {
+                    return false;
+                }
 
                 offsetsMap.put(i, offset);
                 ++i;
@@ -425,8 +492,14 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
         return true;
     }
 
-    private void seek(long rank) throws IOException {
-        final long position = fOffset + rank * sizeofCounter;
+    /**
+     * @brief Loads the file buffer at the given position
+     *
+     * @param position
+     *            expected offset of the mapped file buffer
+     * @throws IOException
+     */
+    private void seek(long position) throws IOException {
         int size = Math.min((int) (fFileChannel.size() - position), BUFFER_SIZE);
         fMappedByteBuffer = fFileChannel.map(MapMode.READ_ONLY, position, size);
     }
@@ -439,43 +512,6 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
             } catch (IOException e) {
             }
         }
-    }
-
-    // ----- Getters ----- //
-
-    /**
-     * @return Kernel launch configuration
-     */
-    public KernelConfiguration getConfiguration() {
-        return configuration;
-    }
-
-    /**
-     * @return Kernel name
-     */
-    public String getKernelName() {
-        return kernelName;
-    }
-
-    /**
-     * @return Chrono time stamp
-     */
-    public long getStamp() {
-        return stamp;
-    }
-
-    /**
-     * @return Roctracer timestamp before kernel launch
-     */
-    public long getRoctracerBegin() {
-        return roctracerBegin;
-    }
-
-    /**
-     * @return Roctracer timestamp after kernel completion
-     */
-    public long getRoctracerEnd() {
-        return roctracerEnd;
     }
 
 }
