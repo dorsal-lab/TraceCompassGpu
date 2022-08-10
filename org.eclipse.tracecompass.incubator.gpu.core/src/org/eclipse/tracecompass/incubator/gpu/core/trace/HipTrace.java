@@ -5,6 +5,8 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -15,6 +17,7 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.tracecompass.incubator.internal.gpu.core.Activator;
 import org.eclipse.tracecompass.tmf.core.event.*;
 import org.eclipse.tracecompass.tmf.core.exceptions.TmfTraceException;
@@ -49,14 +52,18 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
 
     // ----- Trace information ----- //
 
-    private String kernelName;
-    private int instrSize;
-    private long stamp;
-    private long roctracerBegin;
-    private long roctracerEnd;
-    private short sizeofCounter;
-    private KernelConfiguration configuration;
+    /*
+     * private String kernelName; private int instrSize; private long stamp;
+     * private long roctracerBegin; private long roctracerEnd; private
+     * KernelConfiguration configuration;
+     */
     private boolean managed;
+
+    /**
+     * @brief The offset map is filled when initializing the trace, by reading
+     *        every header and storing the offset of each new event
+     */
+    private Map<Long, Long> offsetsMap;
 
     /**
      * @brief Number of expected tokens in header
@@ -85,6 +92,38 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
      */
     private static final int BUFFER_SIZE = 4096;
 
+    private static class CountersHeader {
+        public final String kernelName;
+        public final long numCounters;
+        public final long stamp;
+        public final long roctracerBegin;
+        public final long roctracerEnd;
+        public final long sizeofCounter;
+
+        public CountersHeader(String kernelName, long numCounters, long stamp, long roctracerBegin, long roctracerEnd, long sizeofCounter) {
+            this.kernelName = kernelName;
+            this.numCounters = numCounters;
+            this.stamp = stamp;
+            this.roctracerBegin = roctracerBegin;
+            this.roctracerEnd = roctracerEnd;
+            this.sizeofCounter = sizeofCounter;
+        }
+
+        public long totalSize() {
+            return numCounters * sizeofCounter;
+        }
+    }
+
+    private static class EventsHeader {
+        public final long eventSize;
+        public final long totalSize;
+
+        public EventsHeader(long eventSize, long totalSize) {
+            this.eventSize = eventSize;
+            this.totalSize = totalSize;
+        }
+    }
+
     /**
      * @brief Unary constructor
      */
@@ -107,16 +146,17 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
             return new Status(IStatus.ERROR, Activator.PLUGIN_ID, "Could not parse trace header"); //$NON-NLS-1$
         }
 
-        long traceSize;
-        try {
-            traceSize = Files.size(Path.of(path));
-        } catch (IOException e) { // Should not happen
-            return new Status(IStatus.ERROR, Activator.PLUGIN_ID, "Could not query trace size"); //$NON-NLS-1$
-        }
-
-        if ((traceSize - fOffset) != instrSize * sizeofCounter) {
-            return new Status(IStatus.ERROR, Activator.PLUGIN_ID, "Wrong data size, different from header"); //$NON-NLS-1$
-        }
+        /*
+         * // As of the new hiptrace_managed version, the size will only be
+         * checked on the trace initialization long traceSize; try { traceSize =
+         * Files.size(Path.of(path)); } catch (IOException e) { // Should not
+         * happen return new Status(IStatus.ERROR, Activator.PLUGIN_ID,
+         * "Could not query trace size"); //$NON-NLS-1$ }
+         *
+         * if ((traceSize - fOffset) != instrSize * sizeofCounter) { return new
+         * Status(IStatus.ERROR, Activator.PLUGIN_ID,
+         * "Wrong data size, different from header"); //$NON-NLS-1$ }
+         */
 
         configuration = KernelConfiguration.deserialize(Path.of(path + ".json")); //$NON-NLS-1$
 
@@ -140,6 +180,10 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
             fFileChannel = stream.getChannel();
         } catch (IOException e) {
             throw new TmfTraceException("Could not create reading channel"); //$NON-NLS-1$
+        }
+
+        if (!initMap()) {
+            throw new TmfTraceException("Could not read trace events offsets");
         }
 
         fCurrent = new TmfLongLocation(0L);
@@ -267,47 +311,117 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
         } else if (tokens.length == COUNTER_HEADER_TOKENS && tokens[0].equals(HIPTRACE_COUNTERS_NAME)) {
             // Single kernel execution, create by hip::Instrumenter::dumpBin()
             managed = false;
-            return parseCountersHeader(header);
+            CountersHeader counterHeader = parseCountersHeader(header);
+
+            return counterHeader != null;
         } else {
             return false;
         }
 
     }
 
-    private boolean parseCountersHeader(String header) {
+    private @Nullable CountersHeader parseCountersHeader(String header) {
+        String kernelName;
+        int instrSize;
+        long stamp;
+        long roctracerBegin;
+        long roctracerEnd;
+        long sizeofCounter;
+
         String[] tokens = header.split(",", COUNTER_HEADER_TOKENS); //$NON-NLS-1$
         kernelName = tokens[1];
 
         try {
             instrSize = Integer.parseInt(tokens[2]);
         } catch (NumberFormatException e) {
-            return false;
+            return null;
         }
 
         try {
             stamp = Long.parseLong(tokens[3]);
         } catch (NumberFormatException e) {
-            return false;
+            return null;
         }
 
         try {
             roctracerBegin = Long.parseLong(tokens[4]);
         } catch (NumberFormatException e) {
-            return false;
+            return null;
         }
 
         try {
             roctracerEnd = Long.parseLong(tokens[5]);
         } catch (NumberFormatException e) {
-            return false;
+            return null;
         }
 
         try {
             sizeofCounter = Short.parseShort(tokens[6]);
         } catch (NumberFormatException e) {
-            return false;
+            return null;
         }
 
+        return new CountersHeader(kernelName, instrSize, stamp, roctracerBegin, roctracerEnd, sizeofCounter);
+    }
+
+    private @Nullable EventsHeader parseEventsHeader(String header) {
+        // TODO
+        return null;
+    }
+
+    private boolean initMap() {
+        // The offsets of each events (counters or traces) are stored in a
+        // hashmap
+        offsetsMap = new HashMap<>();
+
+        if (!managed) {
+            offsetsMap.put(0L, (long) fOffset);
+        } else {
+            long i = 0L;
+            long offset = fOffset;
+
+            do {
+                // Need to read multiple headers
+                String header = new String();
+                try (BufferedReader br = new BufferedReader(new FileReader(fFile));) {
+                    br.skip(offset);
+                    header = br.readLine();
+                } catch (IOException e) {
+                    return false;
+                }
+
+                if (header == null) {
+                    return false;
+                }
+
+                String[] tokens = header.split(",", 1); //$NON-NLS-1$
+
+                switch (tokens[0]) {
+                case HIPTRACE_COUNTERS_NAME:
+                    CountersHeader countersHeader = parseCountersHeader(header);
+                    if (countersHeader == null) {
+                        return false;
+                    }
+                    offset += countersHeader.totalSize() + header.length();
+                    break;
+                case HIPTRACE_EVENTS_NAME:
+                    EventsHeader eventsHeader = parseEventsHeader(header);
+                    if(eventsHeader == null) {
+                        return false;
+                    }
+
+                    offset += eventsHeader.totalSize + header.length();
+                    break;
+                default:
+                    return false;
+                }
+
+
+                offsetsMap.put(i, offset);
+                ++i;
+
+            } while (offset < fSize);
+        }
         return true;
     }
 
