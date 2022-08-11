@@ -261,7 +261,14 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
         }
 
         final KernelConfiguration configuration = header.configuration;
-        List<Long> counters = new ArrayList<>((int) header.numCounters);
+        List<Long> counters = new ArrayList<Long>((int) header.numCounters) {
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public String toString() {
+                return "<counters>"; //$NON-NLS-1$
+            }
+        };
 
         for (long pos = offset; pos < header.totalSize(); pos += header.sizeofCounter) {
             try {

@@ -149,4 +149,9 @@ public class KernelConfiguration {
 
         return conf;
     }
+
+    @Override
+    public String toString() {
+        return serialize();
+    }
 }
