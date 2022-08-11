@@ -78,6 +78,11 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
     private static final int COUNTER_HEADER_TOKENS_NO_KI = 7;
 
     /**
+     * @brief Minimum number of expected tokens in events header
+     */
+    private static final int HIPTRACE_EVENTS_HEADER_MIN_TOKENS = 6;
+
+    /**
      * @brief Expected counters header, identifying a single hiptrace counters
      *        dump
      */
@@ -93,6 +98,11 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
      * @brief Expected events header
      */
     public static final String HIPTRACE_EVENTS_NAME = "hiptrace_events"; //$NON-NLS-1$
+
+    /**
+     * @brief Begin event fields description
+     */
+    public static final String HIPTRACE_EVENTS_FIELDS = "begin_fields"; //$NON-NLS-1$
 
     /**
      * @brief TmfEvent : event root for counters aggregate
@@ -134,12 +144,30 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
     }
 
     private static class EventsHeader {
+        public static class Field {
+            public String type;
+            public long size;
+
+            /**
+             * @param type
+             *            Type name, following the Itanium ABI naming convention
+             * @param size
+             *            Type size, in bytes
+             */
+            public Field(String type, long size) {
+                this.type = type;
+                this.size = size;
+            }
+        }
+
         public final long eventSize;
+        public final List<Field> fields;
         public final long totalSize;
 
-        public EventsHeader(long eventSize, long totalSize) {
+        public EventsHeader(long eventSize, List<Field> fields, long totalSize) {
             this.eventSize = eventSize;
             this.totalSize = totalSize;
+            this.fields = fields;
         }
     }
 
@@ -236,7 +264,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
                 long dataOffset = offset + header.length() + 1;
                 event = parseCountersEvent((CountersHeader) parsedHeader, dataOffset, rank);
             } else if (parsedHeader instanceof EventsHeader) {
-                event = parseEventsHeader((EventsHeader) parsedHeader);
+                event = parseEventsEvent((EventsHeader) parsedHeader);
             } else {
                 // What to do ?
             }
@@ -298,7 +326,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
         return new TmfEvent(this, rank, TmfTimestamp.fromNanos(header.roctracerEnd), new TmfEventType(HIPTRACE_COUNTERS_NAME, root), root);
     }
 
-    static private TmfEvent parseEventsHeader(EventsHeader header) {
+    static private TmfEvent parseEventsEvent(EventsHeader header) {
         return null;
     }
 
@@ -441,8 +469,32 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
     }
 
     static private @Nullable EventsHeader parseEventsHeader(String header) {
-        // TODO
-        return null;
+        long eventSize;
+        long totalSize;
+        List<EventsHeader.Field> fields = new ArrayList<>();
+
+        String[] tokens = header.split(","); //$NON-NLS-1$
+
+        if (tokens.length < HIPTRACE_EVENTS_HEADER_MIN_TOKENS) {
+            return null;
+        }
+        try {
+            eventSize = Long.parseLong(tokens[1]);
+            totalSize = Long.parseLong(tokens[2]);
+
+            if (!tokens[3].equals("begin_fields")) { //$NON-NLS-1$
+                return null;
+            }
+
+            for (int i = 4; i < tokens.length; i += 2) {
+                fields.add(new EventsHeader.Field(tokens[i], Long.parseLong(tokens[i + 1])));
+            }
+
+        } catch (NumberFormatException e) {
+            return null;
+        }
+
+        return new EventsHeader(eventSize, fields, totalSize);
     }
 
     private @Nullable Object readHeader(String header) {
@@ -489,17 +541,21 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
                     return false;
                 }
 
+                long nextOffset;
+
                 if (parsedHeader instanceof CountersHeader) {
                     CountersHeader countersHeader = (CountersHeader) parsedHeader;
-                    offset += countersHeader.totalSize() + header.length() + 1;
+                    nextOffset = offset + countersHeader.totalSize() + header.length() + 1;
                 } else if (parsedHeader instanceof EventsHeader) {
                     EventsHeader eventsHeader = (EventsHeader) parsedHeader;
-                    offset += eventsHeader.totalSize + header.length() + 1;
+                    nextOffset = offset + eventsHeader.totalSize + header.length() + 1;
                 } else {
                     return false;
                 }
 
                 offsetsMap.put(i, offset);
+
+                offset = nextOffset;
                 ++i;
 
             } while (offset < fSize);
