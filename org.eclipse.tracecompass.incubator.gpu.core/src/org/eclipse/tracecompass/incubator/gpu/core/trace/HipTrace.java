@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -253,17 +254,15 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
     }
 
     private TmfEvent parseCountersEvent(CountersHeader header, long offset, long rank) {
-        List<TmfEventField> eventFields = new ArrayList<TmfEventField>((int) header.numCounters);
         try {
             seek(offset);
         } catch (IOException e) {
             return null;
         }
 
-
         final KernelConfiguration configuration = header.configuration;
+        List<Long> counters = new ArrayList<>((int) header.numCounters);
 
-        int elem = 0;
         for (long pos = offset; pos < header.totalSize(); pos += header.sizeofCounter) {
             try {
                 if (fMappedByteBuffer.position() + header.sizeofCounter > fMappedByteBuffer.limit()) {
@@ -279,25 +278,16 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
                 counter += b << (i * 8);
             }
 
+            counters.add(counter);
 
-            long bblock = elem % configuration.bblocks;
-            long thread = elem % (configuration.bblocks * configuration.geometry.threads.x);
-            long block = elem % (configuration.bblocks * configuration.geometry.threads.x * configuration.geometry.blocks.x);
-
-            final TmfEventField[] counterFields = {
-                    new TmfEventField("counter", counter, null), //$NON-NLS-1$
-                    new TmfEventField("bblock", bblock, null), //$NON-NLS-1$
-                    new TmfEventField("thread", thread, null), //$NON-NLS-1$
-                    new TmfEventField("block", block, null) //$NON-NLS-1$
-            };
-
-            eventFields.add(new TmfEventField(
-                    HIPTRACE_COUNTERS_COUNTER, null, counterFields));
-
-            ++elem;
         }
 
-        final TmfEventField root = new TmfEventField(ITmfEventField.ROOT_FIELD_ID, null, (TmfEventField[]) eventFields.toArray());
+        final TmfEventField[] countersFields = {
+                new TmfEventField("configuration", configuration, null), //$NON-NLS-1$
+                new TmfEventField("counters", counters, null), //$NON-NLS-1$
+        };
+
+        final TmfEventField root = new TmfEventField(ITmfEventField.ROOT_FIELD_ID, null, countersFields);
 
         return new TmfEvent(this, rank, TmfTimestamp.fromNanos(header.roctracerEnd), new TmfEventType(HIPTRACE_COUNTERS_NAME, root), root);
     }
@@ -436,7 +426,8 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
             // Call configuration embedded in the header
             configuration = KernelConfiguration.deserializeCsv(kernelName, Arrays.copyOfRange(tokens, COUNTER_HEADER_TOKENS_NO_KI, tokens.length));
         } else {
-            // The kernel conf file must have the same name as the trace file + .json (legacy version)
+            // The kernel conf file must have the same name as the trace file +
+            // .json (legacy version)
             configuration = KernelConfiguration.deserialize(Path.of(fFile.toPath() + ".json")); //$NON-NLS-1$
         }
         return new CountersHeader(kernelName, instrSize, stamp, roctracerBegin, roctracerEnd, sizeofCounter, configuration);
@@ -464,7 +455,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
     private boolean initMap() {
         // The offsets of each events (counters or traces) are stored in a
         // hashmap
-        offsetsMap = new HashMap<>();
+        offsetsMap = new TreeMap<>();
 
         if (!managed) {
             offsetsMap.put(0L, 0L);
