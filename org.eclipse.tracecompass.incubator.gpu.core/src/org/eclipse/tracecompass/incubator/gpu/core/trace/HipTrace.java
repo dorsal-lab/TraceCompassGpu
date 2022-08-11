@@ -6,7 +6,6 @@ import java.nio.channels.FileChannel.MapMode;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -492,10 +491,10 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
 
                 if (parsedHeader instanceof CountersHeader) {
                     CountersHeader countersHeader = (CountersHeader) parsedHeader;
-                    offset += countersHeader.totalSize() + header.length();
+                    offset += countersHeader.totalSize() + header.length() + 1;
                 } else if (parsedHeader instanceof EventsHeader) {
                     EventsHeader eventsHeader = (EventsHeader) parsedHeader;
-                    offset += eventsHeader.totalSize + header.length();
+                    offset += eventsHeader.totalSize + header.length() + 1;
                 } else {
                     return false;
                 }

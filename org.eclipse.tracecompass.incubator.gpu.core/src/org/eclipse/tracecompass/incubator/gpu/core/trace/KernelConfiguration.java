@@ -111,12 +111,19 @@ public class KernelConfiguration {
         return gson.fromJson(json, KernelConfiguration.class);
     }
 
+    /**
+     * @brief Deserialize from the kernel configuration csv format (1-file, managed format)
+     *
+     * @param kernelName Kernel name
+     * @param header List of tokens from the header
+     * @return
+     */
     public static @Nullable KernelConfiguration deserializeCsv(String kernelName, String[] header) {
         if (header == null) {
             return null;
         }
 
-        if (!header[0].equals("kernel_info")) {
+        if (!header[0].equals("kernel_info")) { //$NON-NLS-1$
             return null;
         }
 
