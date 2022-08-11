@@ -3,7 +3,9 @@
  */
 package org.eclipse.tracecompass.incubator.gpu.analysis;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -166,14 +168,42 @@ public class GpuRooflineStateProvider extends AbstractTmfStateProvider {
     protected void handleHipTraceEvent(@NonNull ITmfEvent event) {
         long ts = lastKernelCall.getTimestamp().getValue();
 
-        long counter = (long) event.getContent().getField("counter").getValue(); //$NON-NLS-1$
-        long blockId = (long) event.getContent().getField("bblock").getValue(); //$NON-NLS-1$
+        @SuppressWarnings("unchecked")
+        List<Long> counters = (ArrayList<Long>) event.getContent().getField("counters").getValue(); //$NON-NLS-1$
+        KernelConfiguration configuration = (KernelConfiguration) event.getContent().getField("configuration").getValue(); //$NON-NLS-1$
 
-        HipAnalyzerReport.BasicBlock bblock = report.getBlocks().get((int) blockId);
+        if(counters == null || configuration == null) {
+            return;
+        }
 
-        totalFlops += counter * bblock.flops;
-        totalFloatLoads += counter * bblock.floating_ld;
-        totalFloatStores += counter * bblock.floating_st;
+        //KernelConfiguration.Geometry geometry = configuration.geometry;
+
+        List<HipAnalyzerReport.BasicBlock> blocks = report.getBlocks();
+/*
+        for(int block = 0; block < geometry.blocks.x; ++block) {
+            for(int thread = 0; thread <geometry.threads.x; ++thread) {
+                for(int bblock =0; bblock < configuration.bblocks; ++bblock) {
+                    int idx = 0; // TODO
+                    long counter = counters.get(idx);
+
+                    HipAnalyzerReport.BasicBlock bblock_info = blocks.get((bblock));
+
+                    totalFlops += counter * bblock_info.flops;
+                    totalFloatLoads += counter * bblock_info.floating_ld;
+                    totalFloatStores += counter * bblock_info.floating_st;
+                }
+            }
+        }
+*/
+        for(long counter : counters) {
+            int bblock = (int) (counter % configuration.bblocks);
+            HipAnalyzerReport.BasicBlock bblock_info = blocks.get((bblock));
+
+            totalFlops += counter * bblock_info.flops;
+            totalFloatLoads += counter * bblock_info.floating_ld;
+            totalFloatStores += counter * bblock_info.floating_st;
+        }
+
 
         // Update state system
 
