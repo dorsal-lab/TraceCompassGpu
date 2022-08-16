@@ -139,6 +139,22 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
         }
     }
 
+    private static class Event {
+        public String type;
+        public Object value;
+
+        public Event(String type, Object value) {
+            this.type = type;
+            this.value = value;
+
+        }
+
+        @Override
+        public String toString() {
+            return type + " : " + value.toString(); //$NON-NLS-1$
+        }
+    }
+
     private static class EventsHeader {
         public static class Field {
             public String type;
@@ -342,8 +358,34 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
             return null;
         }
 
+        List<Event> data = new ArrayList<>();
+
+        long pos = offset;
+        for (EventsHeader.Field f : header.fields) {
+            try {
+                if (fMappedByteBuffer.position() + f.size > fMappedByteBuffer.limit()) {
+                    seek(pos);
+                }
+            } catch (IOException e) {
+                return null;
+            }
+
+            ArrayList<Byte> bytes = new ArrayList<>();
+
+            for(int index = 0; index < f.size; ++index) {
+                bytes.add(fMappedByteBuffer.get());
+            }
+
+            // Attempt to convert to the appropriate type
+            Object value = ItaniumABIParser.deserializeVariable(f.type, f.size, bytes);
+
+            data.add(new Event(f.type, value));
+
+        }
+
         final TmfEventField[] eventsFields = {
-                // TODO
+                new TmfEventField("type", header.eventName, null), //$NON-NLS-1$
+                new TmfEventField("data", data, null) //$NON-NLS-1$
         };
 
         final TmfEventField root = new TmfEventField(ITmfEventField.ROOT_FIELD_ID, null, eventsFields);
