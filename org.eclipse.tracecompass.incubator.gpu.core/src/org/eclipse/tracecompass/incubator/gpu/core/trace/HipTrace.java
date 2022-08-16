@@ -74,7 +74,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
     /**
      * @brief Minimum number of expected tokens in events header
      */
-    private static final int HIPTRACE_EVENTS_HEADER_MIN_TOKENS = 6;
+    private static final int HIPTRACE_EVENTS_HEADER_MIN_TOKENS = 7;
 
     /**
      * @brief Expected counters header, identifying a single hiptrace counters
@@ -159,12 +159,14 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
         public final long eventSize;
         public final List<Field> fields;
         public final long totalSize;
+        public final String eventName;
         public CountersHeader counters;
 
-        public EventsHeader(long eventSize, List<Field> fields, long totalSize) {
+        public EventsHeader(long eventSize, List<Field> fields, long totalSize, String eventName) {
             this.eventSize = eventSize;
             this.totalSize = totalSize;
             this.fields = fields;
+            this.eventName = eventName;
         }
     }
 
@@ -490,6 +492,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
     static private @Nullable EventsHeader parseEventsHeader(String header) {
         long eventSize;
         long totalSize;
+        String eventName;
         List<EventsHeader.Field> fields = new ArrayList<>();
 
         String[] tokens = header.split(","); //$NON-NLS-1$
@@ -500,12 +503,13 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
         try {
             eventSize = Long.parseLong(tokens[1]);
             totalSize = Long.parseLong(tokens[2]);
+            eventName = tokens[3];
 
-            if (!tokens[3].equals("begin_fields")) { //$NON-NLS-1$
+            if (!tokens[4].equals("begin_fields")) { //$NON-NLS-1$
                 return null;
             }
 
-            for (int i = 4; i < tokens.length; i += 2) {
+            for (int i = 5; i < tokens.length; i += 2) {
                 fields.add(new EventsHeader.Field(tokens[i], Long.parseLong(tokens[i + 1])));
             }
 
@@ -513,7 +517,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
             return null;
         }
 
-        return new EventsHeader(eventSize, fields, totalSize);
+        return new EventsHeader(eventSize, fields, totalSize, eventName);
     }
 
     private @Nullable Object readHeader(String header) {
@@ -588,7 +592,8 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
                     EventsHeader eventsHeader = (EventsHeader) parsedHeader;
                     eventsHeader.counters = lastCounters;
 
-                    nextOffset = offset + eventsHeader.totalSize + header.length() + 1;
+                    offset += header.length() + 1;
+                    nextOffset = offset + eventsHeader.totalSize + 1;
 
                     // All events have the same header (event type), but a new
                     // entry is created for each (since a new TmfEvent will be
