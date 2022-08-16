@@ -31,6 +31,9 @@ public class ItaniumABIParser {
             // char
             byte b = bytes.get(0);
             return (char) b;
+        // Numeric values
+        case "h": //$NON-NLS-1$
+            // unsigned char, in most cases == uint8_t so numeric value
         case "s": //$NON-NLS-1$
             // short
         case "t": //$NON-NLS-1$
