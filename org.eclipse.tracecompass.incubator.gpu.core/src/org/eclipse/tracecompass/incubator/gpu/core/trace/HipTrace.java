@@ -62,12 +62,6 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
     private boolean managed;
 
     /**
-     * @brief The offset map is filled when initializing the trace, by reading
-     *        every header and storing the offset of each new event
-     */
-    private Map<Long, Long> offsetsMap;
-
-    /**
      * @brief Number of expected tokens in header, with the kernel info
      */
     private static final int COUNTER_HEADER_TOKENS = 15;
@@ -127,8 +121,9 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
         public final long roctracerEnd;
         public final long sizeofCounter;
         public final KernelConfiguration configuration;
+        public final String str;
 
-        public CountersHeader(String kernelName, long numCounters, long stamp, long roctracerBegin, long roctracerEnd, long sizeofCounter, KernelConfiguration configuration) {
+        public CountersHeader(String kernelName, long numCounters, long stamp, long roctracerBegin, long roctracerEnd, long sizeofCounter, KernelConfiguration configuration, String str) {
             this.kernelName = kernelName;
             this.numCounters = numCounters;
             this.stamp = stamp;
@@ -136,6 +131,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
             this.roctracerEnd = roctracerEnd;
             this.sizeofCounter = sizeofCounter;
             this.configuration = configuration;
+            this.str = str;
         }
 
         public long totalSize() {
@@ -163,6 +159,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
         public final long eventSize;
         public final List<Field> fields;
         public final long totalSize;
+        public CountersHeader counters;
 
         public EventsHeader(long eventSize, List<Field> fields, long totalSize) {
             this.eventSize = eventSize;
@@ -170,6 +167,24 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
             this.fields = fields;
         }
     }
+
+    private static class TraceLocation {
+        public long offset;
+        public Object header;
+
+        public TraceLocation(long offset, Object header) {
+            this.offset = offset;
+            this.header = header;
+        }
+    }
+
+    /**
+     * @brief The offset map is filled when initializing the trace, by reading
+     *        every header and storing the offset of each new event. The key is
+     *        the rank of the event, and the value represents an offset in the
+     *        file and a header corresponding to the event
+     */
+    private Map<Long, TraceLocation> offsetsMap;
 
     /**
      * @brief Unary constructor
@@ -243,28 +258,20 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
         TmfEvent event = null;
         long rank = context.getRank();
 
-        // Read header
-        Long offset = offsetsMap.get(rank);
-        if (offset != null) {
-            String header = new String();
-            try (BufferedReader br = new BufferedReader(new FileReader(fFile));) {
-                br.skip(offset);
-                header = br.readLine();
-            } catch (IOException e) {
-                return null;
-            }
+        // Read header*
+        TraceLocation loc = offsetsMap.get(rank);
+        if (loc != null) {
+            long offset = loc.offset;
 
-            if (header == null) {
-                return null;
-            }
-
-            Object parsedHeader = readHeader(header);
+            Object parsedHeader = loc.header;
 
             if (parsedHeader instanceof CountersHeader) {
-                long dataOffset = offset + header.length() + 1;
-                event = parseCountersEvent((CountersHeader) parsedHeader, dataOffset, rank);
+                CountersHeader countersHeader = (CountersHeader) parsedHeader;
+                long dataOffset = offset + countersHeader.str.length() + 1;
+                event = parseCountersEvent(countersHeader, dataOffset, rank);
             } else if (parsedHeader instanceof EventsHeader) {
-                event = parseEventsEvent((EventsHeader) parsedHeader);
+                EventsHeader eventsHeader = (EventsHeader) parsedHeader;
+                event = parseEventsEvent(eventsHeader, offset, rank);
             } else {
                 // What to do ?
             }
@@ -326,8 +333,20 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
         return new TmfEvent(this, rank, TmfTimestamp.fromNanos(header.roctracerEnd), new TmfEventType(HIPTRACE_COUNTERS_NAME, root), root);
     }
 
-    static private TmfEvent parseEventsEvent(EventsHeader header) {
-        return null;
+    private TmfEvent parseEventsEvent(EventsHeader header, long offset, long rank) {
+        try {
+            seek(offset);
+        } catch (IOException e) {
+            return null;
+        }
+
+        final TmfEventField[] eventsFields = {
+                // TODO
+        };
+
+        final TmfEventField root = new TmfEventField(ITmfEventField.ROOT_FIELD_ID, null, eventsFields);
+
+        return new TmfEvent(this, rank, TmfTimestamp.fromNanos(header.counters.roctracerEnd), new TmfEventType(HIPTRACE_COUNTERS_NAME, root), root);
     }
 
     @Override
@@ -464,7 +483,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
             // .json (legacy version)
             configuration = KernelConfiguration.deserialize(Path.of(fFile.toPath() + ".json")); //$NON-NLS-1$
         }
-        return new CountersHeader(kernelName, instrSize, stamp, roctracerBegin, roctracerEnd, sizeofCounter, configuration);
+        return new CountersHeader(kernelName, instrSize, stamp, roctracerBegin, roctracerEnd, sizeofCounter, configuration, header);
 
     }
 
@@ -514,9 +533,23 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
         // The offsets of each events (counters or traces) are stored in a
         // hashmap
         offsetsMap = new TreeMap<>();
+        CountersHeader lastCounters = null;
 
         if (!managed) {
-            offsetsMap.put(0L, 0L);
+            String header = new String();
+            try (BufferedReader br = new BufferedReader(new FileReader(fFile));) {
+                header = br.readLine();
+            } catch (IOException e) {
+                return false;
+            }
+
+            CountersHeader parsedHeader = parseCountersHeader(header);
+            if (parsedHeader == null) {
+                return false;
+            }
+
+            offsetsMap.put(0L, new TraceLocation(0L, parsedHeader));
+
         } else {
             long i = 0L;
             long offset = fOffset;
@@ -546,17 +579,31 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
                 if (parsedHeader instanceof CountersHeader) {
                     CountersHeader countersHeader = (CountersHeader) parsedHeader;
                     nextOffset = offset + countersHeader.totalSize() + header.length() + 1;
+
+                    offsetsMap.put(i, new TraceLocation(offset, parsedHeader));
+                    lastCounters = countersHeader;
+                    ++i;
+
                 } else if (parsedHeader instanceof EventsHeader) {
                     EventsHeader eventsHeader = (EventsHeader) parsedHeader;
+                    eventsHeader.counters = lastCounters;
+
                     nextOffset = offset + eventsHeader.totalSize + header.length() + 1;
+
+                    // All events have the same header (event type), but a new
+                    // entry is created for each (since a new TmfEvent will be
+                    // created for each entry)
+
+                    for (int j = 0; j < eventsHeader.totalSize; ++j) {
+                        offsetsMap.put(i, new TraceLocation(offset + j * eventsHeader.eventSize, parsedHeader));
+                        ++i;
+                    }
+
                 } else {
                     return false;
                 }
 
-                offsetsMap.put(i, offset);
-
                 offset = nextOffset;
-                ++i;
 
             } while (offset < fSize);
         }
