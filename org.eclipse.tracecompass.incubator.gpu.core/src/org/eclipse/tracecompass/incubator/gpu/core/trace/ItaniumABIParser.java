@@ -17,45 +17,47 @@ public class ItaniumABIParser {
      *            Serialized data
      *
      * @return A deserialized version of the given bytes, or an unchanged list
-     *         of bytes if the type is not recognized. Numeric types are returned as Long
+     *         of bytes if the type is not recognized. Numeric types are
+     *         returned as Long
      */
+    @SuppressWarnings("nls")
     public static Object deserializeVariable(String mangledType, long sizeof, List<Byte> bytes) {
         switch (mangledType) {
-        case "v": //$NON-NLS-1$
+        case "v":
             // Void
             return bytes;
-        case "b": //$NON-NLS-1$
+        case "b":
             // bool
             return (bytes.get(0) != 0);
-        case "c": //$NON-NLS-1$
+        case "c":
             // char
             byte b = bytes.get(0);
             return (char) b;
         // Numeric values
-        case "h": //$NON-NLS-1$
+        case "h":
             // unsigned char, in most cases == uint8_t so numeric value
-        case "s": //$NON-NLS-1$
+        case "s":
             // short
-        case "t": //$NON-NLS-1$
+        case "t":
             // unsigned short
-        case "i": //$NON-NLS-1$
+        case "i":
             // int
-        case "j": //$NON-NLS-1$
+        case "j":
             // unsigned int
-        case "l": //$NON-NLS-1$
+        case "l":
             // unsigned long
-        case "m": //$NON-NLS-1$
+        case "m":
             // unsigned long
-        case "x": //$NON-NLS-1$
+        case "x":
             // long long
-        case "y": //$NON-NLS-1$
+        case "y":
             // unsigned long long
             return accumulate(sizeof, bytes);
-        case "f": //$NON-NLS-1$
+        case "f":
             // float
             int accumulated_float = (int) accumulate(sizeof, bytes);
             return Float.intBitsToFloat(accumulated_float);
-        case "d": //$NON-NLS-1$
+        case "d":
             // double
             long accumulated_double = accumulate(sizeof, bytes);
             return Double.longBitsToDouble(accumulated_double);
@@ -67,10 +69,50 @@ public class ItaniumABIParser {
     private static long accumulate(long sizeof, List<Byte> bytes) {
         long val = 0l;
 
-        for(int i = 0; i < sizeof; ++i) {
+        for (int i = 0; i < sizeof; ++i) {
             val += bytes.get(i) << (8 * i);
         }
 
         return val;
+    }
+
+    /**
+     * @param mangled Mangled type name
+     * @return Demangled type name if supported, unchanged otherwise
+     */
+    @SuppressWarnings("nls")
+    public static String demangleType(String mangled) {
+        switch (mangled) {
+        case "v":
+            return "void";
+        case "b":
+            return "bool";
+        case "c":
+            return "char";
+        case "h":
+            return "unsigned char";
+        case "s":
+            return "short";
+        case "t":
+            return "unsigned short";
+        case "i":
+            return "int";
+        case "j":
+            return "unsigned int";
+        case "l":
+            return "unsigned long";
+        case "m":
+            return "unsigned long";
+        case "x":
+            return "long long";
+        case "y":
+            return "unsigned long long";
+        case "f":
+            return "float";
+        case "d":
+            return "double";
+        default:
+            return mangled;
+        }
     }
 }
