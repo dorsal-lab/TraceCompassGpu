@@ -380,7 +380,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
             // Attempt to convert to the appropriate type
             Object value = ItaniumABIParser.deserializeVariable(f.type, f.size, bytes);
 
-            data.add(new Event(f.type, value));
+            data.add(new Event(ItaniumABIParser.demangleType(f.type), value));
 
             pos += f.size;
 
