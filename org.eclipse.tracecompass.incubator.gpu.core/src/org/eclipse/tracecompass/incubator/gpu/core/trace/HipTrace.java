@@ -361,6 +361,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
         List<Event> data = new ArrayList<>();
 
         long pos = offset;
+
         for (EventsHeader.Field f : header.fields) {
             try {
                 if (fMappedByteBuffer.position() + f.size > fMappedByteBuffer.limit()) {
@@ -372,7 +373,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
 
             ArrayList<Byte> bytes = new ArrayList<>();
 
-            for(int index = 0; index < f.size; ++index) {
+            for (int index = 0; index < f.size; ++index) {
                 bytes.add(fMappedByteBuffer.get());
             }
 
@@ -380,6 +381,8 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
             Object value = ItaniumABIParser.deserializeVariable(f.type, f.size, bytes);
 
             data.add(new Event(f.type, value));
+
+            pos += f.size;
 
         }
 
@@ -641,7 +644,9 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
                     // entry is created for each (since a new TmfEvent will be
                     // created for each entry)
 
-                    for (int j = 0; j < eventsHeader.totalSize; ++j) {
+                    long numEvents = eventsHeader.totalSize / eventsHeader.eventSize;
+
+                    for (int j = 0; j < numEvents; ++j) {
                         offsetsMap.put(i, new TraceLocation(offset + j * eventsHeader.eventSize, parsedHeader));
                         ++i;
                     }
