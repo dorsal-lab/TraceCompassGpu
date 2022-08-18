@@ -139,7 +139,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
         }
     }
 
-    private static class Event {
+    public static class Event {
         public String type;
         public Object value;
 
@@ -172,17 +172,85 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
             }
         }
 
+        private static long SIZEOF_SIZE_T = 8L; // 8 bytes for a size_t
+
         public final long eventSize;
         public final List<Field> fields;
-        public final long totalSize;
+        public final long numOffsets;
         public final String eventName;
         public CountersHeader counters;
+        public List<Long> offsets;
+        public final long headerPos;
 
-        public EventsHeader(long eventSize, List<Field> fields, long totalSize, String eventName) {
+        public EventsHeader(long headerPos, long eventSize, List<Field> fields, long numOffsets, String eventName) {
+            this.headerPos = headerPos;
             this.eventSize = eventSize;
-            this.totalSize = totalSize;
+            this.numOffsets = numOffsets + 1; // Accounting for the last offset
+                                              // which is the end position
             this.fields = fields;
             this.eventName = eventName;
+        }
+
+        /**
+         * @return Total number of events
+         */
+        public long numEvents() {
+            return offsets.get(offsets.size() - 1);
+        }
+
+        public long offsetsSize() {
+            return numOffsets * SIZEOF_SIZE_T;
+        }
+
+        public long eventsSize() {
+            return numEvents() * eventSize;
+        }
+
+        /**
+         * @return Total size of the hiptrace_events
+         */
+        public long totalSize() {
+            return offsetsSize() + eventsSize();
+        }
+
+        /**
+         * @param offset
+         *            An offset in the map
+         * @return Corresponding global thread id or wave id (depending on the
+         *         type of queue)
+         */
+        public long idOf(long offset) {
+            for (int i = 0; i < offsets.size(); ++i) {
+                if (offsets.get(i) > offset) {
+                    return i - 1;
+                }
+
+                return -1;
+            }
+        }
+
+        public void parseOffsets(File f) {
+            offsets = new ArrayList<>();
+            try {
+                FileInputStream stream = new FileInputStream(f);
+                FileChannel fileChannel = stream.getChannel();
+
+                MappedByteBuffer mappedByteBuffer = fileChannel.map(MapMode.READ_ONLY, headerPos, numOffsets * SIZEOF_SIZE_T);
+
+                for (long i = 0L; i < numOffsets; ++i) {
+                    long offset = 0;
+                    for (int b = 0; b < SIZEOF_SIZE_T; ++b) {
+                        int unsignedValue = mappedByteBuffer.get() & 0xFF;
+                        offset += unsignedValue << (b * 8);
+                    }
+
+                    offsets.add(offset);
+                }
+
+                stream.close();
+            } catch (IOException e) {
+
+            }
         }
     }
 
@@ -534,7 +602,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
 
     }
 
-    static private @Nullable EventsHeader parseEventsHeader(String header) {
+    static private @Nullable EventsHeader parseEventsHeader(String header, long offset) {
         long eventSize;
         long totalSize;
         String eventName;
@@ -562,17 +630,17 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
             return null;
         }
 
-        return new EventsHeader(eventSize, fields, totalSize, eventName);
+        return new EventsHeader(offset + header.length() + 1, eventSize, fields, totalSize, eventName);
     }
 
-    private @Nullable Object readHeader(String header) {
+    private @Nullable Object readHeader(String header, long offset) {
         String[] tokens = header.split(","); //$NON-NLS-1$
 
         switch (tokens[0]) {
         case HIPTRACE_COUNTERS_NAME:
             return parseCountersHeader(header);
         case HIPTRACE_EVENTS_NAME:
-            return parseEventsHeader(header);
+            return parseEventsHeader(header, offset);
         default:
             return null;
         }
@@ -617,7 +685,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
                     return false;
                 }
 
-                Object parsedHeader = readHeader(header);
+                Object parsedHeader = readHeader(header, offset);
 
                 if (parsedHeader == null) {
                     return false;
@@ -638,13 +706,20 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
                     eventsHeader.counters = lastCounters;
 
                     offset += header.length() + 1;
-                    nextOffset = offset + eventsHeader.totalSize + 1;
+
+                    // Now read the offsets
+
+                    eventsHeader.parseOffsets(fFile);
+
+                    offset += eventsHeader.offsetsSize();
+
+                    nextOffset = offset + eventsHeader.eventsSize();
 
                     // All events have the same header (event type), but a new
                     // entry is created for each (since a new TmfEvent will be
                     // created for each entry)
 
-                    long numEvents = eventsHeader.totalSize / eventsHeader.eventSize;
+                    long numEvents = eventsHeader.numEvents();
 
                     for (int j = 0; j < numEvents; ++j) {
                         offsetsMap.put(i, new TraceLocation(offset + j * eventsHeader.eventSize, parsedHeader));

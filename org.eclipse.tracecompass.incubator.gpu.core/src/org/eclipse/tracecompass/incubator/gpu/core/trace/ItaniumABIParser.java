@@ -7,6 +7,7 @@ import java.util.List;
  *
  */
 public class ItaniumABIParser {
+
     /**
      * @param mangledType
      *            Mangled name of type according to the Itanium ABI
@@ -70,14 +71,16 @@ public class ItaniumABIParser {
         long val = 0l;
 
         for (int i = 0; i < sizeof; ++i) {
-            val += bytes.get(i) << (8 * i);
+            long unsignedValue = bytes.get(i) & 0xff;
+            val += unsignedValue << (8 * i);
         }
 
         return val;
     }
 
     /**
-     * @param mangled Mangled type name
+     * @param mangled
+     *            Mangled type name
      * @return Demangled type name if supported, unchanged otherwise
      */
     @SuppressWarnings("nls")
