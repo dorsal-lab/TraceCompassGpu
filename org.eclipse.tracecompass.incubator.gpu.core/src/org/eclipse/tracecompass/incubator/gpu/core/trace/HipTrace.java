@@ -220,13 +220,48 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
          *         type of queue)
          */
         public long idOf(long offset) {
+            long varOffset = offset / eventSize;
             for (int i = 0; i < offsets.size(); ++i) {
-                if (offsets.get(i) > offset) {
-                    return i - 1;
+                if (offsets.get(i) > varOffset) {
+                    return (long) i - 1;
                 }
 
-                return -1;
             }
+            return -1;
+        }
+
+        public boolean isThread() {
+            long numThreads = counters.configuration.totalThreads();
+            return numThreads == (numOffsets - 1);
+        }
+
+        public TmfEventField[] geometryOf(long offset) {
+            long id = idOf(offset);
+
+            KernelConfiguration.Geometry geometry = counters.configuration.geometry;
+
+            if(isThread()) {
+                long block = id / geometry.threads.total();
+                long thread = id % geometry.threads.total();
+
+                final TmfEventField[] geom = {
+                        new TmfEventField("block", block, null), //$NON-NLS-1$
+                        new TmfEventField("thread", thread, null) //$NON-NLS-1$
+                };
+
+                return geom;
+            }
+
+            // Wave
+            long block = id / geometry.threads.total();
+            long wave = block / 64;
+
+            final TmfEventField[] geom = {
+                new TmfEventField("block", block, null), //$NON-NLS-1$
+                new TmfEventField("wave", wave, null) //$NON-NLS-1$
+            };
+
+            return geom;
         }
 
         public void parseOffsets(File f) {
@@ -454,8 +489,11 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
 
         }
 
+        long eventOffset = offset - header.headerPos - header.offsetsSize();
+
         final TmfEventField[] eventsFields = {
                 new TmfEventField("type", header.eventName, null), //$NON-NLS-1$
+                new TmfEventField("producer_id", null, header.geometryOf(eventOffset)), //$NON-NLS-1$
                 new TmfEventField("data", data, null) //$NON-NLS-1$
         };
 

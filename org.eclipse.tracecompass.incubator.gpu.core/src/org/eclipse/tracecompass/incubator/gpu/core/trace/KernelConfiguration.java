@@ -61,6 +61,10 @@ public class KernelConfiguration {
             z = _z;
         }
 
+        public int total() {
+            return x * y * z;
+        }
+
         public int x, y, z;
     }
 
@@ -155,6 +159,10 @@ public class KernelConfiguration {
         }
 
         return conf;
+    }
+
+    public long totalThreads() {
+        return geometry.threads.total() * geometry.blocks.total();
     }
 
     @Override
