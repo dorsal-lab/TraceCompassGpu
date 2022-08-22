@@ -21,11 +21,29 @@ public class HipAnalyzerEvent {
      * @brief Base, unspecialized event
      */
     public static class BaseEvent {
+        /**
+         * Event name (type)
+         */
         protected String name;
+        /**
+         * Parsed events from the binary trace format
+         */
         protected List<HipTrace.Event> events;
+        /**
+         * Corresponding events header
+         */
         protected HipTrace.EventsHeader header;
+        /**
+         * Event rank in the trace
+         */
         protected long rank;
+        /**
+         * Corresponding trace (HipTrace)
+         */
         protected ITmfTrace trace;
+        /**
+         * Event id in the trace
+         */
         protected long eventOffset;
 
         /**
@@ -57,6 +75,9 @@ public class HipAnalyzerEvent {
             this.trace = trace;
         }
 
+        /**
+         * @return Converts to TmfEvent, with relevant fields. To be overloaded.
+         */
         public ITmfEvent toEvent() {
             final TmfEventField[] eventsFields = {
                     new TmfEventField("type", name, null), //$NON-NLS-1$
@@ -112,6 +133,19 @@ public class HipAnalyzerEvent {
         }
     }
 
+    /**
+     * @param trace
+     *            Hip trace
+     * @param rank
+     *            Rank of the event (for TmfEvent creation)
+     * @param eventOffset
+     *            Event offset in the kernel events dump
+     * @param header
+     *            EventsHeader for this kernel launch
+     * @param events
+     *            Parsed values from the binary trace format
+     * @return TmfEvent corresponding to the event
+     */
     @SuppressWarnings("nls")
     public static ITmfEvent parse(ITmfTrace trace, long rank, long eventOffset, HipTrace.EventsHeader header, List<HipTrace.Event> events) {
         switch (header.eventName) {
