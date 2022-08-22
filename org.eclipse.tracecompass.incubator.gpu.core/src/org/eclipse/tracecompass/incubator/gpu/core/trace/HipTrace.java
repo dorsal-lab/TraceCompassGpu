@@ -113,7 +113,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
      */
     private static final int BUFFER_SIZE = 32768;
 
-    private static class CountersHeader {
+    public static class CountersHeader {
         public final String kernelName;
         public final long numCounters;
         public final long stamp;
@@ -155,7 +155,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
         }
     }
 
-    private static class EventsHeader {
+    public static class EventsHeader {
         public static class Field {
             public String type;
             public long size;
@@ -491,15 +491,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
 
         long eventOffset = offset - header.headerPos - header.offsetsSize();
 
-        final TmfEventField[] eventsFields = {
-                new TmfEventField("type", header.eventName, null), //$NON-NLS-1$
-                new TmfEventField("producer_id", null, header.geometryOf(eventOffset)), //$NON-NLS-1$
-                new TmfEventField("data", data, null) //$NON-NLS-1$
-        };
-
-        final TmfEventField root = new TmfEventField(ITmfEventField.ROOT_FIELD_ID, null, eventsFields);
-
-        return new TmfEvent(this, rank, TmfTimestamp.fromNanos(header.counters.roctracerEnd), new TmfEventType(HIPTRACE_COUNTERS_NAME, root), root);
+        return (TmfEvent) HipAnalyzerEvent.parse(this, rank, eventOffset, header, data);
     }
 
     @Override
