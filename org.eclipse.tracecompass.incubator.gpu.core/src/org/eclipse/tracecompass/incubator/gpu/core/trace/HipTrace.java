@@ -61,6 +61,8 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
      */
     private boolean managed;
 
+    private static final long WAVE_SIZE = 64;
+
     /**
      * @brief Number of expected tokens in header, with the kernel info
      */
@@ -240,7 +242,8 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
 
             KernelConfiguration.Geometry geometry = counters.configuration.geometry;
 
-            if(isThread()) {
+            if (isThread()) {
+                // Here id = global thread id
                 long block = id / geometry.threads.total();
                 long thread = id % geometry.threads.total();
 
@@ -253,12 +256,19 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
             }
 
             // Wave
-            long block = id / geometry.threads.total();
-            long wave = block / 64;
+            // Here id = global wave id
+            long blockDim = geometry.threads.total();
+            long wavePerBlock = blockDim / WAVE_SIZE;
+            if (blockDim % WAVE_SIZE != 0) {
+                wavePerBlock += 1;
+            }
+
+            long block = id / wavePerBlock;
+            long waveInBlock = id % wavePerBlock;
 
             final TmfEventField[] geom = {
-                new TmfEventField("block", block, null), //$NON-NLS-1$
-                new TmfEventField("wave", wave, null) //$NON-NLS-1$
+                    new TmfEventField("block", block, null), //$NON-NLS-1$
+                    new TmfEventField("wave", waveInBlock, null) //$NON-NLS-1$
             };
 
             return geom;
