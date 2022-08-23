@@ -97,7 +97,7 @@ public class HipAnalyzerEvent {
     public static class HipEvent extends BaseEvent {
         /**
          * @brief Event name
-         * @return Default event name
+         * @return HipEvent name
          */
         public static @NonNull String name() {
             return "hip::Event"; //$NON-NLS-1$
@@ -124,7 +124,101 @@ public class HipAnalyzerEvent {
             final TmfEventField[] eventsFields = {
                     new TmfEventField("type", name(), null), //$NON-NLS-1$
                     new TmfEventField("producer_id", null, header.geometryOf(eventOffset)), //$NON-NLS-1$
-                    new TmfEventField("bb", (int) events.get(0).value, null) //$NON-NLS-1$
+                    new TmfEventField("bb", (long) events.get(0).value, null) //$NON-NLS-1$
+            };
+
+            final TmfEventField root = new TmfEventField(ITmfEventField.ROOT_FIELD_ID, null, eventsFields);
+
+            return new TmfEvent(trace, rank, TmfTimestamp.fromNanos(header.counters.roctracerEnd), new TmfEventType(name(), root), root);
+        }
+    }
+
+    /**
+     * @brief Implements HipAnalyzer's hip::TaggedEvent
+     */
+    public static class HipTaggedEvent extends BaseEvent {
+        /**
+         * @brief Event name
+         * @return Default event name
+         */
+        public static @NonNull String name() {
+            return "hip::TaggedEvent"; //$NON-NLS-1$
+        }
+
+        /**
+         * @param trace
+         *            Trace from which the event is coming
+         * @param rank
+         *            Event rank in the trace
+         * @param eventOffset
+         *            Id of the event in the events dump
+         * @param header
+         *            Events header
+         * @param events
+         *            Payload
+         */
+        public HipTaggedEvent(ITmfTrace trace, long rank, long eventOffset, HipTrace.EventsHeader header, List<HipTrace.Event> events) {
+            super(trace, rank, eventOffset, header, events);
+        }
+
+        @Override
+        public ITmfEvent toEvent() {
+            final TmfEventField[] eventsFields = {
+                    new TmfEventField("type", name(), null), //$NON-NLS-1$
+                    new TmfEventField("producer_id", null, header.geometryOf(eventOffset)), //$NON-NLS-1$
+                    new TmfEventField("bb", (long) events.get(0).value, null), //$NON-NLS-1$
+                    new TmfEventField("stamp", (long) events.get(1).value, null) //$NON-NLS-1$
+            };
+
+            final TmfEventField root = new TmfEventField(ITmfEventField.ROOT_FIELD_ID, null, eventsFields);
+
+            return new TmfEvent(trace, rank, TmfTimestamp.fromNanos(header.counters.roctracerEnd), new TmfEventType(name(), root), root);
+        }
+    }
+
+    /**
+     * @brief Implements HipAnalyzer's hip::WaveState
+     */
+    public static class HipWaveState extends BaseEvent {
+        /**
+         * @brief Event name
+         * @return Default event name
+         */
+        public static @NonNull String name() {
+            return "hip::WaveState"; //$NON-NLS-1$
+        }
+
+        /**
+         * @param trace
+         *            Trace from which the event is coming
+         * @param rank
+         *            Event rank in the trace
+         * @param eventOffset
+         *            Id of the event in the events dump
+         * @param header
+         *            Events header
+         * @param events
+         *            Payload
+         */
+        public HipWaveState(ITmfTrace trace, long rank, long eventOffset, HipTrace.EventsHeader header, List<HipTrace.Event> events) {
+            super(trace, rank, eventOffset, header, events);
+        }
+
+        @Override
+        public ITmfEvent toEvent() {
+            long bb = (long) events.get(0).value;
+            long stamp = (long) events.get(1).value;
+            long exec = (long) events.get(2).value;
+            long hw_id = (long) events.get(3).value;
+
+            @SuppressWarnings("nls")
+            final TmfEventField[] eventsFields = {
+                    new TmfEventField("type", name(), null),
+                    new TmfEventField("producer_id", null, header.geometryOf(eventOffset)),
+                    new TmfEventField("bb", bb, null),
+                    new TmfEventField("exec", new GcnAsmParser.ExecRegister(exec), null),
+                    new TmfEventField("stamp", stamp, null),
+                    new TmfEventField("hw_id", hw_id, new GcnAsmParser.HardwareIdRegister(hw_id).toEventFields())
             };
 
             final TmfEventField root = new TmfEventField(ITmfEventField.ROOT_FIELD_ID, null, eventsFields);
@@ -146,15 +240,23 @@ public class HipAnalyzerEvent {
      *            Parsed values from the binary trace format
      * @return TmfEvent corresponding to the event
      */
-    @SuppressWarnings("nls")
     public static ITmfEvent parse(ITmfTrace trace, long rank, long eventOffset, HipTrace.EventsHeader header, List<HipTrace.Event> events) {
         switch (header.eventName) {
-        case "hip::Event":
+        case "hip::Event": //$NON-NLS-1$
             if (events.size() != 1) {
                 return new BaseEvent(trace, rank, eventOffset, header, events).toEvent();
             }
             return new HipEvent(trace, rank, eventOffset, header, events).toEvent();
-
+        case "hip::TaggedEvent": //$NON-NLS-1$
+            if (events.size() != 2) {
+                return new BaseEvent(trace, rank, eventOffset, header, events).toEvent();
+            }
+            return new HipTaggedEvent(trace, rank, eventOffset, header, events).toEvent();
+        case "hip::WaveState": //$NON-NLS-1$
+            if (events.size() != 4) {
+                return new BaseEvent(trace, rank, eventOffset, header, events).toEvent();
+            }
+            return new HipWaveState(trace, rank, eventOffset, header, events).toEvent();
         default:
             return new BaseEvent(trace, rank, eventOffset, header, events).toEvent();
         }
