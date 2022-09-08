@@ -3,16 +3,15 @@ package org.eclipse.tracecompass.incubator.gpu.core.trace;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.IOException;
 
 import org.eclipse.core.resources.IProject;
@@ -276,8 +275,8 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
 
         public void parseOffsets(File f) {
             offsets = new ArrayList<>();
-            try {
-                FileInputStream stream = new FileInputStream(f);
+            try(FileInputStream stream = new FileInputStream(f);) {
+
                 FileChannel fileChannel = stream.getChannel();
 
                 MappedByteBuffer mappedByteBuffer = fileChannel.map(MapMode.READ_ONLY, headerPos, numOffsets * SIZEOF_SIZE_T);
@@ -292,7 +291,6 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
                     offsets.add(offset);
                 }
 
-                stream.close();
             } catch (IOException e) {
 
             }
@@ -307,6 +305,22 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
             this.offset = offset;
             this.header = header;
         }
+    }
+
+    private static String getLine(FileInputStream stream) throws IOException {
+        List<Byte> bytes = new ArrayList<>();
+        int read = stream.read();
+        while (read != '\n') {
+            bytes.add((byte) read);
+            read = stream.read();
+        }
+
+        byte[] unboxed = new byte[bytes.size()];
+        for(int i = 0; i < bytes.size(); ++i) {
+            unboxed[i] = bytes.get(i);
+        }
+
+        return new String(unboxed, StandardCharsets.US_ASCII);
     }
 
     /**
@@ -558,8 +572,8 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
 
     private boolean parseFileHeader(File f) {
         String header = new String();
-        try (BufferedReader br = new BufferedReader(new FileReader(f));) {
-            header = br.readLine();
+        try (FileInputStream iStream = new FileInputStream(f);) {
+            header = getLine(iStream);
         } catch (IOException e) {
             return false;
         }
@@ -694,8 +708,8 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
 
         if (!managed) {
             String header = new String();
-            try (BufferedReader br = new BufferedReader(new FileReader(fFile));) {
-                header = br.readLine();
+            try (FileInputStream iStream = new FileInputStream(fFile);) {
+                header = getLine(iStream);
             } catch (IOException e) {
                 return false;
             }
@@ -714,9 +728,9 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
             do {
                 // Need to read multiple headers
                 String header = new String();
-                try (BufferedReader br = new BufferedReader(new FileReader(fFile));) {
-                    br.skip(offset);
-                    header = br.readLine();
+                try (FileInputStream iStream = new FileInputStream(fFile);) {
+                    iStream.skip(offset);
+                    header = getLine(iStream);
                 } catch (IOException e) {
                     return false;
                 }

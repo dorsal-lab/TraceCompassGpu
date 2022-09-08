@@ -8,6 +8,15 @@ import org.eclipse.tracecompass.tmf.core.event.TmfEventField;
  *
  */
 public class GcnAsmParser {
+    /**
+     * @param reg
+     *            Register value
+     * @param low
+     *            Lower bound
+     * @param high
+     *            Higher bound
+     * @return Extracted bit range
+     */
     public static long extractBits(long reg, int low, int high) {
         return ((1 << (high - low + 1)) - 1 & (reg >> low));
     }
@@ -40,8 +49,7 @@ public class GcnAsmParser {
     }
 
     /**
-     * @author Sébastien Darche <sebastien.darche@polymtl.ca>
-     *
+     * Represents the HardwareID register value
      */
     public static class HardwareIdRegister {
         private long hwId;
