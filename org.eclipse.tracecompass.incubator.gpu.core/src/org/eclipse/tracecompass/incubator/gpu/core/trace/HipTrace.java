@@ -329,7 +329,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
      *        the rank of the event, and the value represents an offset in the
      *        file and a header corresponding to the event
      */
-    private Map<Long, TraceLocation> offsetsMap;
+    private List<TraceLocation> offsetsMap;
 
     /**
      * @brief Unary constructor
@@ -403,9 +403,9 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
         TmfEvent event = null;
         long rank = context.getRank();
 
-        // Read header*
-        TraceLocation loc = offsetsMap.get(rank);
-        if (loc != null) {
+        // Read header
+        if (rank < offsetsMap.size()) {
+            TraceLocation loc = offsetsMap.get((int) rank);
             long offset = loc.offset;
 
             Object parsedHeader = loc.header;
@@ -526,7 +526,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
     @Override
     public double getLocationRatio(ITmfLocation location) {
         TmfLongLocation loc = (TmfLongLocation) location;
-        return loc.getLocationInfo().doubleValue() / fSize;
+        return loc.getLocationInfo().doubleValue() / offsetsMap.size();
     }
 
     @Override
@@ -703,7 +703,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
     private boolean initMap() {
         // The offsets of each events (counters or traces) are stored in a
         // hashmap
-        offsetsMap = new TreeMap<>();
+        offsetsMap = new ArrayList<>();
         CountersHeader lastCounters = null;
 
         if (!managed) {
@@ -719,10 +719,9 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
                 return false;
             }
 
-            offsetsMap.put(0L, new TraceLocation(0L, parsedHeader));
+            offsetsMap.add(new TraceLocation(0L, parsedHeader));
 
         } else {
-            long i = 0L;
             long offset = fOffset;
 
             do {
@@ -751,9 +750,8 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
                     CountersHeader countersHeader = (CountersHeader) parsedHeader;
                     nextOffset = offset + countersHeader.totalSize() + header.length() + 1;
 
-                    offsetsMap.put(i, new TraceLocation(offset, parsedHeader));
+                    offsetsMap.add(new TraceLocation(offset, parsedHeader));
                     lastCounters = countersHeader;
-                    ++i;
 
                 } else if (parsedHeader instanceof EventsHeader) {
                     EventsHeader eventsHeader = (EventsHeader) parsedHeader;
@@ -776,8 +774,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
                     long numEvents = eventsHeader.numEvents();
 
                     for (int j = 0; j < numEvents; ++j) {
-                        offsetsMap.put(i, new TraceLocation(offset + j * eventsHeader.eventSize, parsedHeader));
-                        ++i;
+                        offsetsMap.add(new TraceLocation(offset + j * eventsHeader.eventSize, parsedHeader));
                     }
 
                 } else {
