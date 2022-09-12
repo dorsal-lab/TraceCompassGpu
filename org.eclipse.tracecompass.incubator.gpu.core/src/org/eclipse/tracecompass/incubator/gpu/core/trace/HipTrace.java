@@ -47,7 +47,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
     private FileChannel fFileChannel;
     private TmfLongLocation fCurrent;
     private MappedByteBuffer fMappedByteBuffer;
-    private int fOffset;
+    private long fOffset;
 
     private TmfEvent fCurrentEvent;
 
@@ -275,7 +275,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
 
         public void parseOffsets(File f) {
             offsets = new ArrayList<>();
-            try(FileInputStream stream = new FileInputStream(f);) {
+            try (FileInputStream stream = new FileInputStream(f);) {
 
                 FileChannel fileChannel = stream.getChannel();
 
@@ -316,7 +316,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
         }
 
         byte[] unboxed = new byte[bytes.size()];
-        for(int i = 0; i < bytes.size(); ++i) {
+        for (int i = 0; i < bytes.size(); ++i) {
             unboxed[i] = bytes.get(i);
         }
 
@@ -451,8 +451,8 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
 
         for (long pos = offset; pos < header.totalSize(); pos += header.sizeofCounter) {
             try {
-                if (fMappedByteBuffer.position() + header.sizeofCounter > fMappedByteBuffer.limit()) {
-                    seek(pos);
+                if (currentOffset() + header.sizeofCounter > bufferEnd()) {
+                    reallocBuffer(pos);
                 }
             } catch (IOException e) {
                 return null;
@@ -484,15 +484,14 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
         } catch (IOException e) {
             return null;
         }
-
         List<Event> data = new ArrayList<>();
 
         long pos = offset;
 
         for (EventsHeader.Field f : header.fields) {
             try {
-                if (fMappedByteBuffer.position() + f.size > fMappedByteBuffer.limit()) {
-                    seek(pos);
+                if (currentOffset() + f.size > bufferEnd()) {
+                    reallocBuffer(pos);
                 }
             } catch (IOException e) {
                 return null;
@@ -796,8 +795,26 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
      * @throws IOException
      */
     private void seek(long position) throws IOException {
+        if (position >= fOffset && position < bufferEnd()) {
+            int positionInBuffer = (int) (position - fOffset);
+            fMappedByteBuffer.position(positionInBuffer);
+        } else {
+            reallocBuffer(position);
+        }
+    }
+
+    private void reallocBuffer(long position) throws IOException {
         int size = Math.min((int) (fFileChannel.size() - position), BUFFER_SIZE);
         fMappedByteBuffer = fFileChannel.map(MapMode.READ_ONLY, position, size);
+        fOffset = position;
+    }
+
+    private long currentOffset() {
+        return fOffset + fMappedByteBuffer.position();
+    }
+
+    private long bufferEnd() {
+        return fOffset + fMappedByteBuffer.limit();
     }
 
     @Override
