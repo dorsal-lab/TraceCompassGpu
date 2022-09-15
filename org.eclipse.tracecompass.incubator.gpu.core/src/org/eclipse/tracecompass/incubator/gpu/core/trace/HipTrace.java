@@ -182,6 +182,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
         public CountersHeader counters;
         public List<Long> offsets;
         public final long headerPos;
+        private long firstStamp = -1; // <=> max unsigned value (two's complement)
 
         public EventsHeader(long headerPos, long eventSize, List<Field> fields, long numOffsets, String eventName) {
             this.headerPos = headerPos;
@@ -294,6 +295,30 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
             } catch (IOException e) {
 
             }
+        }
+
+        /**
+         * @brief The first s_memrealtime stamp of the kernel execution is
+         *        unknown. We then try and find the earliest one to compute the
+         *        rest of them
+         * @param stamp Timestamp from
+         */
+        public void registerStamp(long stamp) {
+            if(Long.compareUnsigned(stamp, firstStamp) < 0) {
+                // stamp lower than firstStamp
+                firstStamp = stamp;
+            }
+        }
+
+        public boolean hasStamp() {
+            return firstStamp != -1;
+        }
+
+        /**
+         * @return Returns the earliest timestamp that was registered for these events
+         */
+        public long getFirstStamp() {
+            return firstStamp;
         }
     }
 

@@ -8,6 +8,7 @@ import org.eclipse.tracecompass.tmf.core.event.ITmfEventField;
 import org.eclipse.tracecompass.tmf.core.event.TmfEvent;
 import org.eclipse.tracecompass.tmf.core.event.TmfEventField;
 import org.eclipse.tracecompass.tmf.core.event.TmfEventType;
+import org.eclipse.tracecompass.tmf.core.timestamp.ITmfTimestamp;
 import org.eclipse.tracecompass.tmf.core.timestamp.TmfTimestamp;
 import org.eclipse.tracecompass.tmf.core.trace.ITmfTrace;
 
@@ -159,6 +160,8 @@ public class HipAnalyzerEvent {
          */
         public HipTaggedEvent(ITmfTrace trace, long rank, long eventOffset, HipTrace.EventsHeader header, List<HipTrace.Event> events) {
             super(trace, rank, eventOffset, header, events);
+
+            header.registerStamp((Long) events.get(1).value);
         }
 
         @Override
@@ -172,7 +175,9 @@ public class HipAnalyzerEvent {
 
             final TmfEventField root = new TmfEventField(ITmfEventField.ROOT_FIELD_ID, null, eventsFields);
 
-            return new TmfEvent(trace, rank, TmfTimestamp.fromNanos(header.counters.roctracerEnd), new TmfEventType(name(), root), root);
+            ITmfTimestamp tmfStamp = GcnAsmParser.getStampNanos((Long) events.get(1).value, header);
+
+            return new TmfEvent(trace, rank, tmfStamp, new TmfEventType(name(), root), root);
         }
     }
 
@@ -202,6 +207,8 @@ public class HipAnalyzerEvent {
          */
         public HipWaveState(ITmfTrace trace, long rank, long eventOffset, HipTrace.EventsHeader header, List<HipTrace.Event> events) {
             super(trace, rank, eventOffset, header, events);
+
+            header.registerStamp((Long) events.get(1).value);
         }
 
         @Override
@@ -223,7 +230,9 @@ public class HipAnalyzerEvent {
 
             final TmfEventField root = new TmfEventField(ITmfEventField.ROOT_FIELD_ID, null, eventsFields);
 
-            return new TmfEvent(trace, rank, TmfTimestamp.fromNanos(header.counters.roctracerEnd), new TmfEventType(name(), root), root);
+            ITmfTimestamp tmfStamp = GcnAsmParser.getStampNanos(stamp, header);
+
+            return new TmfEvent(trace, rank, tmfStamp, new TmfEventType(name(), root), root);
         }
     }
 

@@ -1,6 +1,9 @@
 package org.eclipse.tracecompass.incubator.gpu.core.trace;
 
+import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.tracecompass.tmf.core.event.TmfEventField;
+import org.eclipse.tracecompass.tmf.core.timestamp.ITmfTimestamp;
+import org.eclipse.tracecompass.tmf.core.timestamp.TmfTimestamp;
 
 /**
  * @brief GCN ISA status parser
@@ -8,6 +11,9 @@ import org.eclipse.tracecompass.tmf.core.event.TmfEventField;
  *
  */
 public class GcnAsmParser {
+
+    private static long MEMREALTIME_FREQ = 25000000L;
+
     /**
      * @param reg
      *            Register value
@@ -95,5 +101,26 @@ public class GcnAsmParser {
 
             return fields;
         }
+    }
+
+    /**
+     * @param sMemRealtime S_MEMREALTIME Register value
+     * @param header Event header
+     * @return Absolute ITmfTimestamp computed from the offset
+     */
+    public static @NonNull ITmfTimestamp getStampNanos(long sMemRealtime, HipTrace.EventsHeader header) {
+        if(header.hasStamp()) {
+             long first = header.getFirstStamp();
+             long diffTicks = sMemRealtime - first;
+
+             double diffSeconds = ((double) diffTicks) / ((double) MEMREALTIME_FREQ);
+             long diffNanos = (long) (diffSeconds * 1.e9);
+
+             long stamp = header.counters.roctracerBegin + diffNanos;
+             return TmfTimestamp.fromNanos(stamp);
+
+        }
+
+        return TmfTimestamp.fromNanos(header.counters.roctracerEnd);
     }
 }
