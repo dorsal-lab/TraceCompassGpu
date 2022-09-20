@@ -116,7 +116,7 @@ public class GcnAsmParser {
              double diffSeconds = ((double) diffTicks) / ((double) MEMREALTIME_FREQ);
              long diffNanos = (long) (diffSeconds * 1.e9);
 
-             long stamp = header.counters.roctracerBegin + diffNanos;
+             long stamp = header.counters.roctracerEnd + diffNanos;
              return TmfTimestamp.fromNanos(stamp);
 
         }

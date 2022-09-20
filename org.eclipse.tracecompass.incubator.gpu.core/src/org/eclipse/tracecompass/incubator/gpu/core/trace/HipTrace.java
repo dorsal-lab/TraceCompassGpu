@@ -114,6 +114,49 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
      */
     private static final int BUFFER_SIZE = 32768;
 
+    /**
+     * @param geometry
+     *            Kernel launch geometry
+     * @return Number of waves in each work group (block)
+     */
+    public static long wavesPerBlocks(KernelConfiguration.Geometry geometry) {
+        long blockDim = geometry.threads.total();
+        long wavePerBlock = blockDim / WAVE_SIZE;
+        if (blockDim % WAVE_SIZE != 0) {
+            wavePerBlock += 1;
+        }
+
+        return wavePerBlock;
+    }
+
+    public static long producerIdFromGeometry(EventsHeader header, ITmfEventField producerId) {
+        Long block = (Long) producerId.getField("block").getValue(); //$NON-NLS-1$
+
+        if (block == null) {
+            return -1;
+        }
+
+        KernelConfiguration.Geometry geom = header.counters.configuration.geometry;
+
+        if (header.isThread()) {
+            Long thread = (Long) producerId.getField("thread").getValue(); //$NON-NLS-1$
+            if (thread == null) {
+                return -1;
+            }
+
+            return block * geom.threads.x + thread;
+        }
+
+        Long wave = (Long) producerId.getField("wave").getValue(); //$NON-NLS-1$
+
+        if (wave == null) {
+            return -1;
+        }
+
+        return block * wavesPerBlocks(geom) + wave;
+
+    }
+
     public static class CountersHeader {
         public final String kernelName;
         public final long numCounters;
@@ -182,7 +225,8 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
         public CountersHeader counters;
         public List<Long> offsets;
         public final long headerPos;
-        private long firstStamp = -1; // <=> max unsigned value (two's complement)
+        private long firstStamp = -1; // <=> max unsigned value (two's
+                                      // complement)
 
         public EventsHeader(long headerPos, long eventSize, List<Field> fields, long numOffsets, String eventName) {
             this.headerPos = headerPos;
@@ -200,16 +244,29 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
             return offsets.get(offsets.size() - 1);
         }
 
+        /**
+         * @return Size of the offsets header, in bytes
+         */
         public long offsetsSize() {
             return numOffsets * SIZEOF_SIZE_T;
         }
 
+        /**
+         * @return Size of the events, in bytes
+         */
         public long eventsSize() {
             return numEvents() * eventSize;
         }
 
         /**
-         * @return Total size of the hiptrace_events
+         * @return Number of event producers
+         */
+        public long parallelism() {
+            return offsets.size() - 1;
+        }
+
+        /**
+         * @return Total size of the hiptrace_events, in bytes
          */
         public long totalSize() {
             return offsetsSize() + eventsSize();
@@ -232,11 +289,20 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
             return -1;
         }
 
+        /**
+         * @return True if the events are produced from threads, false if from
+         *         waves
+         */
         public boolean isThread() {
             long numThreads = counters.configuration.totalThreads();
             return numThreads == (numOffsets - 1);
         }
 
+        /**
+         * @param offset
+         *            Producer id
+         * @return TmfEventField with the appropriate geometry
+         */
         public TmfEventField[] geometryOf(long offset) {
             long id = idOf(offset);
 
@@ -257,11 +323,7 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
 
             // Wave
             // Here id = global wave id
-            long blockDim = geometry.threads.total();
-            long wavePerBlock = blockDim / WAVE_SIZE;
-            if (blockDim % WAVE_SIZE != 0) {
-                wavePerBlock += 1;
-            }
+            long wavePerBlock = HipTrace.wavesPerBlocks(geometry);
 
             long block = id / wavePerBlock;
             long waveInBlock = id % wavePerBlock;
@@ -301,10 +363,11 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
          * @brief The first s_memrealtime stamp of the kernel execution is
          *        unknown. We then try and find the earliest one to compute the
          *        rest of them
-         * @param stamp Timestamp from
+         * @param stamp
+         *            Timestamp from
          */
         public void registerStamp(long stamp) {
-            if(Long.compareUnsigned(stamp, firstStamp) < 0) {
+            if (Long.compareUnsigned(stamp, firstStamp) < 0) {
                 // stamp lower than firstStamp
                 firstStamp = stamp;
             }
@@ -315,10 +378,20 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
         }
 
         /**
-         * @return Returns the earliest timestamp that was registered for these events
+         * @return Returns the earliest timestamp that was registered for these
+         *         events
          */
         public long getFirstStamp() {
             return firstStamp;
+        }
+
+        @Override
+        public String toString() {
+            if (isThread()) {
+                return "<Thread events header>"; //$NON-NLS-1$
+            }
+
+            return "<Wave events header>"; //$NON-NLS-1$
         }
     }
 

@@ -80,10 +80,13 @@ public class HipAnalyzerEvent {
          * @return Converts to TmfEvent, with relevant fields. To be overloaded.
          */
         public ITmfEvent toEvent() {
+
+            @SuppressWarnings("nls")
             final TmfEventField[] eventsFields = {
-                    new TmfEventField("type", name, null), //$NON-NLS-1$
-                    new TmfEventField("producer_id", null, header.geometryOf(eventOffset)), //$NON-NLS-1$
-                    new TmfEventField("data", events, null) //$NON-NLS-1$
+                    new TmfEventField("type", name, null),
+                    new TmfEventField("producer_id", null, header.geometryOf(eventOffset)),
+                    new TmfEventField("data", events, null),
+                    new TmfEventField("header", header, null)
             };
 
             final TmfEventField root = new TmfEventField(ITmfEventField.ROOT_FIELD_ID, null, eventsFields);
@@ -125,7 +128,8 @@ public class HipAnalyzerEvent {
             final TmfEventField[] eventsFields = {
                     new TmfEventField("type", name(), null), //$NON-NLS-1$
                     new TmfEventField("producer_id", null, header.geometryOf(eventOffset)), //$NON-NLS-1$
-                    new TmfEventField("bb", (long) events.get(0).value, null) //$NON-NLS-1$
+                    new TmfEventField("bb", (long) events.get(0).value, null), //$NON-NLS-1$
+                    new TmfEventField("header", header, null) //$NON-NLS-1$
             };
 
             final TmfEventField root = new TmfEventField(ITmfEventField.ROOT_FIELD_ID, null, eventsFields);
@@ -166,11 +170,14 @@ public class HipAnalyzerEvent {
 
         @Override
         public ITmfEvent toEvent() {
+
+            @SuppressWarnings("nls")
             final TmfEventField[] eventsFields = {
-                    new TmfEventField("type", name(), null), //$NON-NLS-1$
-                    new TmfEventField("producer_id", null, header.geometryOf(eventOffset)), //$NON-NLS-1$
-                    new TmfEventField("bb", (long) events.get(0).value, null), //$NON-NLS-1$
-                    new TmfEventField("stamp", (long) events.get(1).value, null) //$NON-NLS-1$
+                    new TmfEventField("type", name(), null),
+                    new TmfEventField("producer_id", null, header.geometryOf(eventOffset)),
+                    new TmfEventField("bb", (long) events.get(0).value, null),
+                    new TmfEventField("stamp", (long) events.get(1).value, null),
+                    new TmfEventField("header", header, null)
             };
 
             final TmfEventField root = new TmfEventField(ITmfEventField.ROOT_FIELD_ID, null, eventsFields);
@@ -225,7 +232,8 @@ public class HipAnalyzerEvent {
                     new TmfEventField("bb", bb, null),
                     new TmfEventField("exec", new GcnAsmParser.ExecRegister(exec), null),
                     new TmfEventField("stamp", stamp, null),
-                    new TmfEventField("hw_id", hw_id, new GcnAsmParser.HardwareIdRegister(hw_id).toEventFields())
+                    new TmfEventField("hw_id", hw_id, new GcnAsmParser.HardwareIdRegister(hw_id).toEventFields()),
+                    new TmfEventField("header", header, null)
             };
 
             final TmfEventField root = new TmfEventField(ITmfEventField.ROOT_FIELD_ID, null, eventsFields);
