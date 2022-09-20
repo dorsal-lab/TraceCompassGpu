@@ -42,6 +42,17 @@
                name="gpu_info_path">
          </parameter>
       </module>
+      <module
+            analysis_module="org.eclipse.tracecompass.incubator.gpu.analysis.GpuWaveStateAnalysis"
+            automatic="false"
+            id="org.eclipse.tracecompass.incubator.gpu.core.GpuWaveStateAnalysis"
+            name="GPU Wave lifetime analysis">
+         <tracetype
+               applies="true"
+               class="org.eclipse.tracecompass.incubator.gpu.core.trace.HipTrace"
+               id="org.eclipse.tracecompass.incubator.gpu.core.trace.HipTrace">
+         </tracetype>
+      </module>
    </extension>
    <extension
          point="org.eclipse.tracecompass.tmf.core.dataprovider">
