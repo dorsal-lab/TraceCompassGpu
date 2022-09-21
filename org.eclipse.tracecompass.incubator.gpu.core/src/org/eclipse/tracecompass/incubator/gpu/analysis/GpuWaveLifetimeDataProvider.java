@@ -3,7 +3,6 @@
  */
 package org.eclipse.tracecompass.incubator.gpu.analysis;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +43,9 @@ public class GpuWaveLifetimeDataProvider extends AbstractTreeDataProvider<@NonNu
      */
     public static final String ID = "org.eclipse.tracecompass.incubator.gpu.analysis.GpuWaveLifetimeDataProvider"; //$NON-NLS-1$
 
+    /**
+     * @brief Sampling period to avoid computing each interval
+     */
     private static final long SAMPLING_NS = 100_000L;
 
     /**
@@ -109,6 +111,7 @@ public class GpuWaveLifetimeDataProvider extends AbstractTreeDataProvider<@NonNu
         // Cumulative waves
 
         double[] wavesFinished = new double[size];
+        double[] wavesActive = new double[size];
 
         try {
             int i = 0;
@@ -116,15 +119,20 @@ public class GpuWaveLifetimeDataProvider extends AbstractTreeDataProvider<@NonNu
                 List<@NonNull ITmfStateInterval> values = ss.queryFullState(time);
 
                 long finished = 0L;
+                long active = 0L;
 
-                for(int wave : waves) {
+                for (int wave : waves) {
                     ITmfStateInterval interval = values.get(wave);
-                    if(interval.getValueLong() == -1) {
+                    long bb = interval.getValueLong();
+                    if (bb == -1) {
                         ++finished;
+                    } else if (bb != 0) {
+                        ++active;
                     }
                 }
 
                 wavesFinished[i] = finished;
+                wavesActive[i] = active;
 
                 ++i;
             }
@@ -135,9 +143,9 @@ public class GpuWaveLifetimeDataProvider extends AbstractTreeDataProvider<@NonNu
         }
 
         YModel cumulativeWaves = new YModel(0, "Cumulative waves", wavesFinished); //$NON-NLS-1$
+        YModel activeWaves = new YModel(1, "Active waves", wavesActive); //$NON-NLS-1$
 
-        List<@NonNull IYModel> models = List.of(cumulativeWaves);
-
+        List<@NonNull IYModel> models = List.of(cumulativeWaves, activeWaves);
 
         return new TmfModelResponse<>(new TmfCommonXAxisModel("GPU Wave Lifetime Analysis", times, models), Status.COMPLETED, CommonStatusMessage.COMPLETED); //$NON-NLS-1$
     }
