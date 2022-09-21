@@ -60,6 +60,10 @@
             class="org.eclipse.tracecompass.incubator.gpu.analysis.GpuRooflineDataProviderFactory"
             id="org.eclipse.tracecompass.incubator.gpu.analysis.GpuRooflineAnalysisDataProvider">
       </dataProviderFactory>
+      <dataProviderFactory
+            class="org.eclipse.tracecompass.incubator.gpu.analysis.GpuWaveLifetimeDataProviderFactory"
+            id="org.eclipse.tracecompass.incubator.gpu.analysis.GpuWaveLifetimeDataProvider">
+      </dataProviderFactory>
    </extension>
 
 </plugin>

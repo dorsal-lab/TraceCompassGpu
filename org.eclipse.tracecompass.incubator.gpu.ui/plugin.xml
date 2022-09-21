@@ -43,6 +43,13 @@
             name="GPU Roofline"
             restorable="true">
       </view>
+      <view
+            category="org.eclipse.linuxtools.tmf.ui.views.category"
+            class="org.eclipse.tracecompass.incubator.gpu.ui.views.GpuWaveCumulatedView"
+            id="org.eclipse.tracecompass.incubator.gpu.ui.gpuwavecumulatedview"
+            name="GPU Cumulated waves view"
+            restorable="true">
+      </view>
    </extension>
    <extension
          point="org.eclipse.ui.handlers">
