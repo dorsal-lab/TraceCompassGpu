@@ -27,6 +27,7 @@ public class GpuWaveStateProvider extends AbstractTmfStateProvider {
     private int activeWavesQuark = DEFAULT_QUARK;
 
     private int[] wavesQuarks;
+    private int[] stampsQuarks;
     boolean newEvents = false;
 
     /**
@@ -74,21 +75,27 @@ public class GpuWaveStateProvider extends AbstractTmfStateProvider {
             HipTrace.EventsHeader header = (HipTrace.EventsHeader) event.getContent().getField("header").getValue(); //$NON-NLS-1$
             if (newEvents) {
                 wavesQuarks = new int[(int) header.parallelism()];
+                stampsQuarks = new int[(int) header.parallelism()];
 
                 newEvents = false;
             }
 
             ITmfStateSystemBuilder ss = Objects.requireNonNull(getStateSystemBuilder());
 
-            long bb = (Long) event.getContent().getField("bb").getValue(); //$NON-NLS-1$
-            ITmfEventField pos = event.getContent().getField("producer_id"); //$NON-NLS-1$
+            ITmfEventField content = event.getContent();
+
+            long bb = (Long) content.getField("bb").getValue(); //$NON-NLS-1$
+            long stampMemory = (Long) content.getField("stamp").getValue(); //$NON-NLS-1$
+            ITmfEventField pos = content.getField("producer_id"); //$NON-NLS-1$
 
             int id = (int) HipTrace.producerIdFromGeometry(header, pos);
-            if (wavesQuarks[id] == 0) {
+            if (wavesQuarks[id] == 0 || stampsQuarks[id] == 0) {
                 wavesQuarks[id] = ss.getQuarkRelativeAndAdd(activeWavesQuark, String.valueOf(id));
+                stampsQuarks[id] = ss.getQuarkRelativeAndAdd(wavesQuarks[id], "stamp"); //$NON-NLS-1$
             }
 
             ss.modifyAttribute(stamp.getValue(), bb, wavesQuarks[id]);
+            ss.modifyAttribute(stamp.getValue(), stampMemory, stampsQuarks[id]);
 
         } else if (event.getType().getName().equals("hiptrace_counters")) { //$NON-NLS-1$
             // The next events are from a different kernel launch, need to

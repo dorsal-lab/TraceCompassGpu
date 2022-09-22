@@ -46,7 +46,7 @@ public class GpuWaveLifetimeDataProvider extends AbstractTreeDataProvider<@NonNu
     /**
      * @brief Sampling period to avoid computing each interval
      */
-    private static final long SAMPLING_NS = 100_000L;
+    private static final long SAMPLING_NS = 2_500L;
 
     /**
      * @param trace
@@ -112,6 +112,7 @@ public class GpuWaveLifetimeDataProvider extends AbstractTreeDataProvider<@NonNu
 
         double[] wavesFinished = new double[size];
         double[] wavesActive = new double[size];
+        double[] totalFlops = new double[size];
 
         try {
             int i = 0;
@@ -120,19 +121,36 @@ public class GpuWaveLifetimeDataProvider extends AbstractTreeDataProvider<@NonNu
 
                 long finished = 0L;
                 long active = 0L;
+                double flops = 0.;
 
                 for (int wave : waves) {
                     ITmfStateInterval interval = values.get(wave);
-                    long bb = interval.getValueLong();
-                    if (bb == -1) {
-                        ++finished;
-                    } else if (bb != 0) {
+                    Long bb = (Long) interval.getValue();
+
+                    if (bb == null) {
+                        // Nothing to do, uninitialized
+                    } else if (bb != -1) {
+                        // Valid basic block, currently active
                         ++active;
+
+                        // Compute active flops
+                        if(bb == 0) { // TEMPORARY, need to query basic block db (hip-analyzer report)
+                            ITmfStateInterval stampMemory = values.get(ss.getSubAttributes(wave, false).get(0));
+                            // stampMemory interval represents how long we stayed in the basic block
+                            double diff = ((double)stampMemory.getEndTime() - stampMemory.getStartTime()) / 1.e6;
+                            flops += 1 / diff; // #Flop / t (second)
+                        }
+
+
+                    } else {
+                        // bb == -1, by convention the wave is finished
+                        ++finished;
                     }
                 }
 
                 wavesFinished[i] = finished;
                 wavesActive[i] = active;
+                totalFlops[i] = flops;
 
                 ++i;
             }
@@ -144,8 +162,9 @@ public class GpuWaveLifetimeDataProvider extends AbstractTreeDataProvider<@NonNu
 
         YModel cumulativeWaves = new YModel(0, "Cumulative waves", wavesFinished); //$NON-NLS-1$
         YModel activeWaves = new YModel(1, "Active waves", wavesActive); //$NON-NLS-1$
+        YModel flopsTotal = new YModel(2, "Kernel throughput (FLOP/s)", totalFlops); //$NON-NLS-1$
 
-        List<@NonNull IYModel> models = List.of(cumulativeWaves, activeWaves);
+        List<@NonNull IYModel> models = List.of(cumulativeWaves, activeWaves, flopsTotal);
 
         return new TmfModelResponse<>(new TmfCommonXAxisModel("GPU Wave Lifetime Analysis", times, models), Status.COMPLETED, CommonStatusMessage.COMPLETED); //$NON-NLS-1$
     }
