@@ -1,5 +1,9 @@
 package org.eclipse.tracecompass.incubator.gpu.analysis;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.eclipse.tracecompass.incubator.gpu.core.trace.GcnAsmParser;
 import org.eclipse.tracecompass.tmf.core.event.ITmfEventField;
 
 /**
@@ -9,10 +13,10 @@ import org.eclipse.tracecompass.tmf.core.event.ITmfEventField;
  */
 public class MI100Gpu implements GcnGpuArchitecture {
 
-    private int[] computeUnits;
+    private HashMap<Long, Integer> computeUnits;
 
     public MI100Gpu() {
-        computeUnits = new int[numCU()];
+        computeUnits = new HashMap<>();
     }
 
     @Override
@@ -26,8 +30,23 @@ public class MI100Gpu implements GcnGpuArchitecture {
     }
 
     @Override
-    public void registerWave(ITmfEventField hardwareIdRegister) {
-        // TODO
+    public double occupancy(int computeUnit) {
+        // TODO Auto-generated method stub
+        return GcnGpuArchitecture.super.occupancy(computeUnit);
+    }
+
+    @Override
+    public double totalOccupancy() {
+        // TODO Auto-generated method stub
+        return GcnGpuArchitecture.super.totalOccupancy();
+    }
+
+    @Override
+    public void registerWave(long hardwareIdRegister) {
+        GcnAsmParser.HardwareIdRegister hwId = new GcnAsmParser.HardwareIdRegister(hardwareIdRegister);
+        long cu = hwId.cuId() + hwId.shId() << 3 + hwId.seId() << 4;
+
+        computeUnits.put(cu, 0); // TODO
     }
 
     @Override

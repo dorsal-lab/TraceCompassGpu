@@ -15,6 +15,9 @@ public interface GcnGpuArchitecture {
      */
     int numCU();
 
+    /**
+     * @return Maximum number of concurrently executing waves per compute unit
+     */
     int maxWavesPerCU();
 
     // ----- State altering ------ //
@@ -23,7 +26,7 @@ public interface GcnGpuArchitecture {
      * @param hardwareIdRegister
      *            Value of the HW_ID register, as stored in the HipTrace events
      */
-    void registerWave(ITmfEventField hardwareIdRegister);
+    void registerWave(long hardwareIdRegister);
 
     // ------ Data retrieval & analysis ----- //
     /**

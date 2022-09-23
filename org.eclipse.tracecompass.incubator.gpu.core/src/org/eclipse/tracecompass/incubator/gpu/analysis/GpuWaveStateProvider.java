@@ -3,6 +3,7 @@ package org.eclipse.tracecompass.incubator.gpu.analysis;
 import java.util.Objects;
 
 import org.eclipse.jdt.annotation.NonNull;
+import org.eclipse.tracecompass.incubator.gpu.core.trace.GcnAsmParser;
 import org.eclipse.tracecompass.incubator.gpu.core.trace.HipAnalyzerEvent;
 import org.eclipse.tracecompass.incubator.gpu.core.trace.HipTrace;
 import org.eclipse.tracecompass.statesystem.core.ITmfStateSystemBuilder;
@@ -26,8 +27,31 @@ public class GpuWaveStateProvider extends AbstractTmfStateProvider {
     private static int DEFAULT_QUARK = -1;
     private int activeWavesQuark = DEFAULT_QUARK;
 
-    private int[] wavesQuarks;
-    private int[] stampsQuarks;
+    private class StoredQuarks {
+        private int waveQuark;
+        private int valueQuark;
+
+        public StoredQuarks(int id) {
+            ITmfStateSystemBuilder ss = Objects.requireNonNull(getStateSystemBuilder());
+            waveQuark = ss.getQuarkRelativeAndAdd(activeWavesQuark, String.valueOf(id));
+
+            // It is much easier to store directly the value than creating
+            // sub-attributes. What's more, it reduces stress on the (probably)
+            // overloaded state system by using less quarks
+            valueQuark = ss.getQuarkRelativeAndAdd(waveQuark, "content"); //$NON-NLS-1$
+        }
+
+        public int getWaveQuark() {
+            return waveQuark;
+        }
+
+        public int getValueQuark() {
+            return valueQuark;
+        }
+    }
+
+    private StoredQuarks[] storedQuarks;
+
     boolean newEvents = false;
 
     /**
@@ -74,8 +98,7 @@ public class GpuWaveStateProvider extends AbstractTmfStateProvider {
         if (event.getType().getName().equals(HipAnalyzerEvent.HipWaveState.name())) {
             HipTrace.EventsHeader header = (HipTrace.EventsHeader) event.getContent().getField("header").getValue(); //$NON-NLS-1$
             if (newEvents) {
-                wavesQuarks = new int[(int) header.parallelism()];
-                stampsQuarks = new int[(int) header.parallelism()];
+                storedQuarks = new StoredQuarks[(int) header.parallelism()];
 
                 newEvents = false;
             }
@@ -85,17 +108,15 @@ public class GpuWaveStateProvider extends AbstractTmfStateProvider {
             ITmfEventField content = event.getContent();
 
             long bb = (Long) content.getField("bb").getValue(); //$NON-NLS-1$
-            long stampMemory = (Long) content.getField("stamp").getValue(); //$NON-NLS-1$
             ITmfEventField pos = content.getField("producer_id"); //$NON-NLS-1$
 
             int id = (int) HipTrace.producerIdFromGeometry(header, pos);
-            if (wavesQuarks[id] == 0 || stampsQuarks[id] == 0) {
-                wavesQuarks[id] = ss.getQuarkRelativeAndAdd(activeWavesQuark, String.valueOf(id));
-                stampsQuarks[id] = ss.getQuarkRelativeAndAdd(wavesQuarks[id], "stamp"); //$NON-NLS-1$
+            if (storedQuarks[id] == null) {
+                storedQuarks[id] = new StoredQuarks(id);
             }
 
-            ss.modifyAttribute(stamp.getValue(), bb, wavesQuarks[id]);
-            ss.modifyAttribute(stamp.getValue(), stampMemory, stampsQuarks[id]);
+            ss.modifyAttribute(stamp.getValue(), bb, storedQuarks[id].getWaveQuark());
+            ss.modifyAttribute(stamp.getValue(), content, storedQuarks[id].getValueQuark());
 
         } else if (event.getType().getName().equals("hiptrace_counters")) { //$NON-NLS-1$
             // The next events are from a different kernel launch, need to

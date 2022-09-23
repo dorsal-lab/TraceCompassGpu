@@ -134,13 +134,14 @@ public class GpuWaveLifetimeDataProvider extends AbstractTreeDataProvider<@NonNu
                         ++active;
 
                         // Compute active flops
-                        if(bb == 0) { // TEMPORARY, need to query basic block db (hip-analyzer report)
+                        if (bb == 0) { // TEMPORARY, need to query basic block
+                                       // db (hip-analyzer report)
                             ITmfStateInterval stampMemory = values.get(ss.getSubAttributes(wave, false).get(0));
-                            // stampMemory interval represents how long we stayed in the basic block
-                            double diff = ((double)stampMemory.getEndTime() - stampMemory.getStartTime()) / 1.e6;
+                            // stampMemory interval represents how long we
+                            // stayed in the basic block
+                            double diff = ((double) stampMemory.getEndTime() - stampMemory.getStartTime()) / 1.e6;
                             flops += 1 / diff; // #Flop / t (second)
                         }
-
 
                     } else {
                         // bb == -1, by convention the wave is finished
