@@ -1,7 +1,5 @@
 package org.eclipse.tracecompass.incubator.gpu.analysis;
 
-import org.eclipse.tracecompass.tmf.core.event.ITmfEventField;
-
 /**
  * @author Sébastien Darche <sebastien.darche@polymtl.ca>
  *

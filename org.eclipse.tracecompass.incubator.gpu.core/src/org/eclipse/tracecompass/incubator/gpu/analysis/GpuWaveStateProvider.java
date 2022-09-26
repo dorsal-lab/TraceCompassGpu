@@ -3,7 +3,6 @@ package org.eclipse.tracecompass.incubator.gpu.analysis;
 import java.util.Objects;
 
 import org.eclipse.jdt.annotation.NonNull;
-import org.eclipse.tracecompass.incubator.gpu.core.trace.GcnAsmParser;
 import org.eclipse.tracecompass.incubator.gpu.core.trace.HipAnalyzerEvent;
 import org.eclipse.tracecompass.incubator.gpu.core.trace.HipTrace;
 import org.eclipse.tracecompass.statesystem.core.ITmfStateSystemBuilder;

@@ -110,6 +110,7 @@ public class GcnAsmParser {
                     new TmfEventField("queue_id", queue_id, null),
                     new TmfEventField("state_id", state_id, null),
                     new TmfEventField("me_id", me_id, null),
+                    new TmfEventField("value", hwId, null)
             };
 
             return fields;
@@ -122,28 +123,7 @@ public class GcnAsmParser {
          */
         @SuppressWarnings("nls")
         public static long fromEventFields(ITmfEventField eventField) {
-            long wave_id = (Long) eventField.getField("wave_id").getValue();
-            long simd_id = (Long) eventField.getField("simd_id").getValue();
-            long pipe_id = (Long) eventField.getField("pipe_id").getValue();
-            long cu_id = (Long) eventField.getField("cu_id").getValue();
-            long sh_id = (Long) eventField.getField("sh_id").getValue();
-            long se_id = (Long) eventField.getField("se_id").getValue();
-            long tg_id = (Long) eventField.getField("tg_id").getValue();
-            long vm_id = (Long) eventField.getField("vm_id").getValue();
-            long queue_id = (Long) eventField.getField("queue_id").getValue();
-            long state_id = (Long) eventField.getField("state_id").getValue();
-            long me_id = (Long) eventField.getField("me_id").getValue();
-
-            return wave_id + simd_id << 4
-                    + pipe_id << 6
-                            + cu_id << 8
-                                    + sh_id << 12
-                                            + se_id << 13
-                                                    + tg_id << 16
-                                                            + vm_id << 20
-                                                                    + queue_id << 24
-                                                                            + state_id << 27
-                                                                                    + me_id << 30;
+            return (Long) eventField.getField("value").getValue();
         }
     }
 

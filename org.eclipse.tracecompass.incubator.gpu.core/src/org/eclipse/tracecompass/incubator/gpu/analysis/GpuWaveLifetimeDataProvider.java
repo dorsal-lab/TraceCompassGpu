@@ -10,12 +10,14 @@ import java.util.Map;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.Nullable;
+import org.eclipse.tracecompass.incubator.gpu.core.trace.GcnAsmParser;
 import org.eclipse.tracecompass.internal.tmf.core.model.tree.AbstractTreeDataProvider;
 import org.eclipse.tracecompass.statesystem.core.ITmfStateSystem;
 import org.eclipse.tracecompass.statesystem.core.exceptions.AttributeNotFoundException;
 import org.eclipse.tracecompass.statesystem.core.exceptions.StateSystemDisposedException;
 import org.eclipse.tracecompass.statesystem.core.exceptions.TimeRangeException;
 import org.eclipse.tracecompass.statesystem.core.interval.ITmfStateInterval;
+import org.eclipse.tracecompass.tmf.core.event.ITmfEventField;
 import org.eclipse.tracecompass.tmf.core.model.CommonStatusMessage;
 import org.eclipse.tracecompass.tmf.core.model.TmfCommonXAxisModel;
 import org.eclipse.tracecompass.tmf.core.model.YModel;
@@ -123,9 +125,13 @@ public class GpuWaveLifetimeDataProvider extends AbstractTreeDataProvider<@NonNu
                 long active = 0L;
                 double flops = 0.;
 
+                MI100Gpu gpuState = new MI100Gpu();
+
                 for (int wave : waves) {
                     ITmfStateInterval interval = values.get(wave);
                     Long bb = (Long) interval.getValue();
+
+                    ITmfStateInterval content = values.get(ss.getSubAttributes(wave, false).get(0));
 
                     if (bb == null) {
                         // Nothing to do, uninitialized
@@ -136,11 +142,17 @@ public class GpuWaveLifetimeDataProvider extends AbstractTreeDataProvider<@NonNu
                         // Compute active flops
                         if (bb == 0) { // TEMPORARY, need to query basic block
                                        // db (hip-analyzer report)
-                            ITmfStateInterval stampMemory = values.get(ss.getSubAttributes(wave, false).get(0));
+
                             // stampMemory interval represents how long we
                             // stayed in the basic block
-                            double diff = ((double) stampMemory.getEndTime() - stampMemory.getStartTime()) / 1.e6;
+                            double diff = ((double) content.getEndTime() - content.getStartTime()) / 1.e6;
                             flops += 1 / diff; // #Flop / t (second)
+                        }
+
+                        ITmfEventField event = (ITmfEventField) content.getValue();
+
+                        if (event != null) {
+                            gpuState.registerWave(GcnAsmParser.HardwareIdRegister.fromEventFields(event.getField("hw_id"))); //$NON-NLS-1$
                         }
 
                     } else {
@@ -148,6 +160,8 @@ public class GpuWaveLifetimeDataProvider extends AbstractTreeDataProvider<@NonNu
                         ++finished;
                     }
                 }
+
+                //gpuState.dump();
 
                 wavesFinished[i] = finished;
                 wavesActive[i] = active;
