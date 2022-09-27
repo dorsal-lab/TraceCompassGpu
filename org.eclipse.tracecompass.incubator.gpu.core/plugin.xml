@@ -64,6 +64,10 @@
             class="org.eclipse.tracecompass.incubator.gpu.analysis.GpuWaveLifetimeDataProviderFactory"
             id="org.eclipse.tracecompass.incubator.gpu.analysis.GpuWaveLifetimeDataProvider">
       </dataProviderFactory>
+      <dataProviderFactory
+            class="org.eclipse.tracecompass.incubator.gpu.analysis.GpuOccupancyDataProviderFactory"
+            id="org.eclipse.tracecompass.incubator.gpu.analysis.GpuOccupancyDataProvider">
+      </dataProviderFactory>
    </extension>
 
 </plugin>

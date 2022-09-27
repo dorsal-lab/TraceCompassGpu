@@ -11,12 +11,14 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.Nullable;
+import org.eclipse.tracecompass.incubator.gpu.core.trace.GcnAsmParser;
 import org.eclipse.tracecompass.internal.tmf.core.model.tree.AbstractTreeDataProvider;
 import org.eclipse.tracecompass.statesystem.core.ITmfStateSystem;
 import org.eclipse.tracecompass.statesystem.core.exceptions.AttributeNotFoundException;
 import org.eclipse.tracecompass.statesystem.core.exceptions.StateSystemDisposedException;
 import org.eclipse.tracecompass.statesystem.core.exceptions.TimeRangeException;
 import org.eclipse.tracecompass.statesystem.core.interval.ITmfStateInterval;
+import org.eclipse.tracecompass.tmf.core.event.ITmfEventField;
 import org.eclipse.tracecompass.tmf.core.model.CommonStatusMessage;
 import org.eclipse.tracecompass.tmf.core.model.TmfCommonXAxisModel;
 import org.eclipse.tracecompass.tmf.core.model.YModel;
@@ -27,8 +29,8 @@ import org.eclipse.tracecompass.tmf.core.model.tree.TmfTreeModel;
 import org.eclipse.tracecompass.tmf.core.model.xy.ITmfTreeXYDataProvider;
 import org.eclipse.tracecompass.tmf.core.model.xy.ITmfXyModel;
 import org.eclipse.tracecompass.tmf.core.model.xy.IYModel;
-import org.eclipse.tracecompass.tmf.core.response.TmfModelResponse;
 import org.eclipse.tracecompass.tmf.core.response.ITmfResponse;
+import org.eclipse.tracecompass.tmf.core.response.TmfModelResponse;
 import org.eclipse.tracecompass.tmf.core.response.ITmfResponse.Status;
 import org.eclipse.tracecompass.tmf.core.trace.ITmfTrace;
 import org.eclipse.tracecompass.tmf.core.trace.TmfTraceUtils;
@@ -37,12 +39,12 @@ import org.eclipse.tracecompass.tmf.core.trace.TmfTraceUtils;
  * @author Sébastien Darche <sebastien.darche@polymtl.ca>
  *
  */
-public class GpuWaveLifetimeDataProvider extends AbstractTreeDataProvider<@NonNull GpuWaveStateAnalysis, @NonNull TmfTreeDataModel> implements ITmfTreeXYDataProvider<TmfTreeDataModel> {
+public class GpuOccupancyDataProvider extends AbstractTreeDataProvider<@NonNull GpuWaveStateAnalysis, @NonNull TmfTreeDataModel> implements ITmfTreeXYDataProvider<TmfTreeDataModel> {
 
     /**
      * @brief Data provider ID
      */
-    public static final String ID = "org.eclipse.tracecompass.incubator.gpu.analysis.GpuWaveLifetimeDataProvider"; //$NON-NLS-1$
+    public static final String ID = "org.eclipse.tracecompass.incubator.gpu.analysis.GpuOccupancyDataProvider"; //$NON-NLS-1$
 
     /**
      * @brief Sampling period to avoid computing each interval
@@ -55,7 +57,7 @@ public class GpuWaveLifetimeDataProvider extends AbstractTreeDataProvider<@NonNu
      * @param analysisModule
      *            Wave state analysis
      */
-    public GpuWaveLifetimeDataProvider(ITmfTrace trace, GpuWaveStateAnalysis analysisModule) {
+    public GpuOccupancyDataProvider(ITmfTrace trace, GpuWaveStateAnalysis analysisModule) {
         super(trace, analysisModule);
     }
 
@@ -66,13 +68,15 @@ public class GpuWaveLifetimeDataProvider extends AbstractTreeDataProvider<@NonNu
      */
     public static @Nullable ITmfTreeDataProvider<? extends ITmfTreeDataModel> create(@NonNull ITmfTrace trace) {
         GpuWaveStateAnalysis module = TmfTraceUtils.getAnalysisModuleOfClass(trace, GpuWaveStateAnalysis.class, GpuWaveStateAnalysis.ID);
-        return module != null ? new GpuWaveLifetimeDataProvider(trace, module) : null;
+        return module != null ? new GpuOccupancyDataProvider(trace, module) : null;
     }
+
 
     @Override
     public @NonNull String getId() {
         return ID;
     }
+
 
     @Override
     public @NonNull TmfModelResponse<@NonNull ITmfXyModel> fetchXY(@NonNull Map<@NonNull String, @NonNull Object> fetchParameters, @Nullable IProgressMonitor monitor) {
@@ -115,18 +119,14 @@ public class GpuWaveLifetimeDataProvider extends AbstractTreeDataProvider<@NonNu
 
         // Cumulative waves
 
-        double[] wavesFinished = new double[size];
-        double[] wavesActive = new double[size];
-        double[] totalFlops = new double[size];
+        double[] averageOccupancy = new double[size];
 
         try {
             int i = 0;
             for (long time : times) {
                 List<@NonNull ITmfStateInterval> values = ss.queryFullState(time);
 
-                long finished = 0L;
-                long active = 0L;
-                double flops = 0.;
+                MI100Gpu gpuState = new MI100Gpu();
 
                 for (int wave : waves) {
                     ITmfStateInterval interval = values.get(wave);
@@ -134,33 +134,19 @@ public class GpuWaveLifetimeDataProvider extends AbstractTreeDataProvider<@NonNu
 
                     ITmfStateInterval content = values.get(ss.getSubAttributes(wave, false).get(0));
 
-                    if (bb == null) {
-                        // Nothing to do, uninitialized
-                    } else if (bb != -1) {
-                        // Valid basic block, currently active
-                        ++active;
+                    if (bb != null && bb != -1) {
+                        ITmfEventField event = (ITmfEventField) content.getValue();
 
-                        // Compute active flops
-                        if (bb == 0) { // TEMPORARY, need to query basic block
-                                       // db (hip-analyzer report)
-
-                            // stampMemory interval represents how long we
-                            // stayed in the basic block
-                            double diff = ((double) content.getEndTime() - content.getStartTime()) / 1.e6;
-                            flops += 1 / diff; // #Flop / t (second)
+                        if (event != null) {
+                            gpuState.registerWave(GcnAsmParser.HardwareIdRegister.fromEventFields(event.getField("hw_id"))); //$NON-NLS-1$
                         }
 
-                    } else {
-                        // bb == -1, by convention the wave is finished
-                        ++finished;
                     }
                 }
 
                 // gpuState.dump();
 
-                wavesFinished[i] = finished;
-                wavesActive[i] = active;
-                totalFlops[i] = flops;
+                averageOccupancy[i] = gpuState.totalOccupancy();
 
                 mon.worked(1);
                 ++i;
@@ -171,11 +157,9 @@ public class GpuWaveLifetimeDataProvider extends AbstractTreeDataProvider<@NonNu
                     CommonStatusMessage.STATE_SYSTEM_FAILED);
         }
 
-        YModel cumulativeWaves = new YModel(0, "Cumulative waves", wavesFinished); //$NON-NLS-1$
-        YModel activeWaves = new YModel(1, "Active waves", wavesActive); //$NON-NLS-1$
-        YModel flopsTotal = new YModel(2, "Kernel throughput (FLOP/s)", totalFlops); //$NON-NLS-1$
+        YModel occupancyAverage = new YModel(2, "Average occupancy", averageOccupancy); //$NON-NLS-1$
 
-        List<@NonNull IYModel> models = List.of(cumulativeWaves, activeWaves, flopsTotal);
+        List<@NonNull IYModel> models = List.of(occupancyAverage);
 
         mon.done();
         return new TmfModelResponse<>(new TmfCommonXAxisModel("GPU Wave Lifetime Analysis", times, models), Status.COMPLETED, CommonStatusMessage.COMPLETED); //$NON-NLS-1$
@@ -183,7 +167,7 @@ public class GpuWaveLifetimeDataProvider extends AbstractTreeDataProvider<@NonNu
 
     @Override
     protected boolean isCacheable() {
-        return true;
+        return false;
     }
 
     @Override

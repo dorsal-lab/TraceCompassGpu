@@ -27,7 +27,7 @@ public class GpuWaveCumulatedView extends TmfChartView {
     public static final String VIEW = "GPU Cumulated waves view"; //$NON-NLS-1$
 
     /**
-     * @brief Chard ID
+     * @brief Chart ID
      */
     public static final String ID = "org.eclipse.tracecompass.incubator.gpu.ui.gpuwavecumulatedview"; //$NON-NLS-1$
 
@@ -40,7 +40,7 @@ public class GpuWaveCumulatedView extends TmfChartView {
 
     @Override
     protected TmfXYChartViewer createChartViewer(Composite parent) {
-        TmfXYChartSettings settings = new TmfXYChartSettings(null, null, null, 1);
+        TmfXYChartSettings settings = new TmfXYChartSettings(VIEW, null, null, 1);
         return new TmfFilteredXYChartViewer(parent, settings, GpuWaveLifetimeDataProvider.ID);
     }
 
