@@ -16,7 +16,7 @@ public class GpuBasicBlockReportView extends TmfChartView {
     /**
      * @brief View name
      */
-    public static final String VIEW = "GPU Occupancy view"; //$NON-NLS-1$
+    public static final String VIEW = "GPU Basic Block report"; //$NON-NLS-1$
 
     /**
      * @brief Chart ID

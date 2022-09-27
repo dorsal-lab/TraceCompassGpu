@@ -68,6 +68,10 @@
             class="org.eclipse.tracecompass.incubator.gpu.analysis.GpuOccupancyDataProviderFactory"
             id="org.eclipse.tracecompass.incubator.gpu.analysis.GpuOccupancyDataProvider">
       </dataProviderFactory>
+      <dataProviderFactory
+            class="org.eclipse.tracecompass.incubator.gpu.analysis.GpuBasicBlocksReportDataProviderFactory"
+            id="org.eclipse.tracecompass.incubator.gpu.analysis.GpuBasicBlocksReportDataProvider">
+      </dataProviderFactory>
    </extension>
 
 </plugin>

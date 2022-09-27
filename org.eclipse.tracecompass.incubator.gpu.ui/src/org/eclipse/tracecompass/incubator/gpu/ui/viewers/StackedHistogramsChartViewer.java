@@ -13,6 +13,7 @@ import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swtchart.Chart;
 import org.eclipse.swtchart.IAxis;
@@ -70,8 +71,6 @@ public class StackedHistogramsChartViewer extends TmfXYChartViewer {
         setMouseWheelZoomProvider(null);
         setTooltipProvider(null);
         setMouseDrageProvider(null);
-
-        setSwtChart(null); // TA-DAAA remove useless listeners
     }
 
     private Chart createChart() {
@@ -111,6 +110,11 @@ public class StackedHistogramsChartViewer extends TmfXYChartViewer {
 
         return fSwtChart;
 
+    }
+
+    @Override
+    public Control getControl() {
+        return fScrolled;
     }
 
     private static void drawGridLines(GC gc, Chart swtChart) {

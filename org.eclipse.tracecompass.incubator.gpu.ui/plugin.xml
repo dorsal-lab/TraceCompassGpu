@@ -57,6 +57,13 @@
             name="GPU Occupancy view"
             restorable="true">
       </view>
+      <view
+            category="org.eclipse.linuxtools.tmf.ui.views.category"
+            class="org.eclipse.tracecompass.incubator.gpu.ui.views.GpuBasicBlockReportView"
+            id="org.eclipse.tracecompass.incubator.gpu.ui.gpubasicblockreportview"
+            name="GPU Basic Block report"
+            restorable="true">
+      </view>
    </extension>
    <extension
          point="org.eclipse.ui.handlers">
