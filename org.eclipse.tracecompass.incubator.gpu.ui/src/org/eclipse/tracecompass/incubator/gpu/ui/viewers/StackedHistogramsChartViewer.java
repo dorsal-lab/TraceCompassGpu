@@ -12,6 +12,7 @@ import org.eclipse.swt.custom.StackLayout;
 import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
@@ -55,7 +56,9 @@ public class StackedHistogramsChartViewer extends TmfXYChartViewer {
     private void replaceChart() {
         // Quick hack to replace the swt chart
         Composite fCommonComposite = getSwtChart().getParent();
-        getSwtChart().dispose();
+        getSwtChart().setVisible(false);
+        GridData gridData = (GridData) getSwtChart().getParent().getLayoutData();
+        gridData.exclude = true;
 
         fScrolled = new ScrolledComposite(fCommonComposite, SWT.V_SCROLL | SWT.BORDER);
         fContent = new Composite(fScrolled, SWT.NONE);

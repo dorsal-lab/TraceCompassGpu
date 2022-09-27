@@ -5,6 +5,7 @@ import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.tracecompass.incubator.gpu.analysis.GpuBasicBlocksReportDataProvider;
 import org.eclipse.tracecompass.incubator.gpu.ui.viewers.StackedHistogramsChartViewer;
 import org.eclipse.tracecompass.tmf.ui.viewers.TmfViewer;
 import org.eclipse.tracecompass.tmf.ui.viewers.xychart.TmfXYChartViewer;
@@ -33,7 +34,7 @@ public class GpuBasicBlockReportView extends TmfChartView {
 
     @Override
     protected TmfXYChartViewer createChartViewer(Composite parent) {
-        StackedHistogramsChartViewer chart = new StackedHistogramsChartViewer(parent, VIEW, ID);
+        StackedHistogramsChartViewer chart = new StackedHistogramsChartViewer(parent, VIEW, GpuBasicBlocksReportDataProvider.ID);
 
         return chart;
     }
