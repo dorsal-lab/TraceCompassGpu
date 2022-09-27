@@ -1,6 +1,3 @@
-/**
- *
- */
 package org.eclipse.tracecompass.incubator.gpu.ui.viewers;
 
 import java.util.HashMap;
@@ -10,6 +7,8 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.ScrolledComposite;
+import org.eclipse.swt.custom.StackLayout;
 import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
@@ -18,17 +17,9 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swtchart.Chart;
 import org.eclipse.swtchart.IAxis;
 import org.eclipse.swtchart.ICustomPaintListener;
-import org.eclipse.swtchart.ILineSeries;
-import org.eclipse.swtchart.ILineSeries.PlotSymbolType;
-import org.eclipse.swtchart.ISeriesSet;
-import org.eclipse.swtchart.LineStyle;
-import org.eclipse.swtchart.Range;
-import org.eclipse.swtchart.model.DoubleArraySeriesModel;
-import org.eclipse.swtchart.ISeries.SeriesType;
 import org.eclipse.tracecompass.incubator.gpu.analysis.RooflineXYModel;
 import org.eclipse.tracecompass.tmf.core.dataprovider.DataProviderManager;
 import org.eclipse.tracecompass.tmf.core.model.xy.ISeriesModel;
-import org.eclipse.tracecompass.tmf.core.model.xy.ISeriesModel.DisplayType;
 import org.eclipse.tracecompass.tmf.core.model.xy.ITmfTreeXYDataProvider;
 import org.eclipse.tracecompass.tmf.core.model.xy.ITmfXYDataProvider;
 import org.eclipse.tracecompass.tmf.core.model.xy.ITmfXyModel;
@@ -39,14 +30,13 @@ import org.eclipse.tracecompass.tmf.core.trace.ITmfTrace;
 import org.eclipse.tracecompass.tmf.ui.viewers.xychart.TmfXYChartViewer;
 import org.eclipse.tracecompass.tmf.ui.widgets.timegraph.widgets.TimeGraphColorScheme;
 
-/**
- * @author Sébastien Darche <sebastien.darche@polymtl.ca>
- *
- */
-public class RooflineChartViewer extends TmfXYChartViewer {
+public class StackedHistogramsChartViewer extends TmfXYChartViewer {
 
     /** Analysis ID **/
     private String fId;
+
+    private ScrolledComposite fScrolled;
+    private Composite fContent;
 
     /** The color scheme for the chart */
     private @NonNull TimeGraphColorScheme fColorScheme = new TimeGraphColorScheme();
@@ -54,7 +44,7 @@ public class RooflineChartViewer extends TmfXYChartViewer {
     /** Timeout between updates in the updateData thread **/
     private static final long BUILD_UPDATE_TIMEOUT = 500;
 
-    public RooflineChartViewer(Composite parent, String title, String id) {
+    public StackedHistogramsChartViewer(Composite parent, String title, String id) {
         super(parent, title, "", "");
         fId = id;
 
@@ -66,12 +56,31 @@ public class RooflineChartViewer extends TmfXYChartViewer {
         Composite fCommonComposite = getSwtChart().getParent();
         getSwtChart().dispose();
 
-        Chart fSwtChart = new Chart(fCommonComposite, SWT.NONE);
+        fScrolled = new ScrolledComposite(fCommonComposite, SWT.V_SCROLL | SWT.BORDER);
+        fContent = new Composite(fScrolled, SWT.NONE);
+        fContent.setBackground(fColorScheme.getColor(TimeGraphColorScheme.TOOL_BACKGROUND));
+
+        StackLayout layout = new StackLayout();
+        fContent.setLayout(layout);
+
+        setTimeAxisVisible(false);
+
+        setSelectionProvider(null);
+        setMouseDragZoomProvider(null);
+        setMouseWheelZoomProvider(null);
+        setTooltipProvider(null);
+        setMouseDrageProvider(null);
+
+        setSwtChart(null); // TA-DAAA remove useless listeners
+    }
+
+    private Chart createChart() {
+        Chart fSwtChart = new Chart(fContent, SWT.NONE);
         fSwtChart.getPlotArea().addCustomPaintListener(new ICustomPaintListener() {
 
             @Override
             public void paintControl(PaintEvent e) {
-                drawGridLines(e.gc);
+                drawGridLines(e.gc, fSwtChart);
             }
 
             @Override
@@ -100,20 +109,13 @@ public class RooflineChartViewer extends TmfXYChartViewer {
         yAxis.getTitle().setText(RooflineXYModel.ROOFLINE_YAXIS_NAME);
         yAxis.enableLogScale(true);
 
-        setSwtChart(fSwtChart); // TA-DAAA remove useless listeners
-        setTimeAxisVisible(false);
+        return fSwtChart;
 
-        setSelectionProvider(null);
-        setMouseDragZoomProvider(null);
-        setMouseWheelZoomProvider(null);
-        setTooltipProvider(null);
-        setMouseDrageProvider(null);
     }
 
-    private void drawGridLines(GC gc) {
-        Chart fSwtChart = getSwtChart();
+    private static void drawGridLines(GC gc, Chart swtChart) {
         // Point size = fSwtChart.getPlotArea().getSize();
-        Color foreground = fSwtChart.getAxisSet().getXAxis(0).getGrid().getForeground();
+        Color foreground = swtChart.getAxisSet().getXAxis(0).getGrid().getForeground();
         gc.setForeground(foreground);
         gc.setAlpha(foreground.getAlpha());
         gc.setLineStyle(SWT.LINE_DOT);
@@ -182,47 +184,13 @@ public class RooflineChartViewer extends TmfXYChartViewer {
             TmfXYAxisDescription xAxisDescription = null;
             TmfXYAxisDescription yAxisDescription = null;
 
-            if (getSwtChart().isDisposed()) {
-                return;
-            }
             if (monitor != null && monitor.isCanceled()) {
                 return;
             }
-            ISeriesSet seriesSet = getSwtChart().getSeriesSet();
 
             for (ISeriesModel entry : seriesValues.getSeriesData()) {
-
-                ILineSeries<Integer> series = (ILineSeries<Integer>) seriesSet.createSeries(SeriesType.LINE, entry.getName());
-
-                series.setDataModel(new DoubleArraySeriesModel(
-                        RooflineXYModel.fromFixedPointArray(entry.getXAxis()),
-                        entry.getData()));
-
-                if (entry.getDisplayType() == DisplayType.SCATTER) {
-                    series.setLineStyle(LineStyle.NONE);
-                    series.setSymbolType(PlotSymbolType.SQUARE);
-                    series.setSymbolSize(8);
-                }
-
-                // Get the x and y data types
-                if (xAxisDescription == null) {
-                    xAxisDescription = entry.getXAxisDescription();
-                }
-                if (yAxisDescription == null) {
-                    yAxisDescription = entry.getYAxisDescription();
-                }
+                // TODO
             }
-
-            Chart fSwtChart = getSwtChart();
-            IAxis xAxis = fSwtChart.getAxisSet().getXAxis(0);
-            xAxis.enableLogScale(true);
-            xAxis.setRange(new Range(RooflineXYModel.ROOFLINE_X_MIN, RooflineXYModel.ROOFLINE_X_MAX));
-
-            IAxis yAxis = fSwtChart.getAxisSet().getYAxis(0);
-            yAxis.enableLogScale(true);
-            yAxis.setRange(new Range(RooflineXYModel.ROOFLINE_Y_MIN, RooflineXYModel.ROOFLINE_Y_MAX));
-
-            fSwtChart.redraw();
         });
     }
 
