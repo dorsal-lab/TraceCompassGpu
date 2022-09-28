@@ -96,8 +96,6 @@ public class GpuWaveLifetimeDataProvider extends AbstractTreeDataProvider<@NonNu
             return new TmfModelResponse<>(null, Status.FAILED, CommonStatusMessage.STATE_SYSTEM_FAILED);
         }
 
-        List<@NonNull Integer> waves = ss.getSubAttributes(wavesQuark, false);
-
         // ----- Sampling time ----- //
 
         long begin = ss.getStartTime();
@@ -167,6 +165,14 @@ public class GpuWaveLifetimeDataProvider extends AbstractTreeDataProvider<@NonNu
             return new TmfModelResponse<>(null,
                     ITmfResponse.Status.FAILED,
                     CommonStatusMessage.STATE_SYSTEM_FAILED);
+        }
+
+        // Prefix sum, could be wrong as intervals may be returned multiple
+        // times. The query2D doc is unclear on this
+        double cumulatedFinished = 0.;
+        for (int i = 0; i < size; ++i) {
+            cumulatedFinished += wavesFinished[i];
+            wavesFinished[i] = cumulatedFinished;
         }
 
         YModel cumulativeWaves = new YModel(0, "Cumulative waves", wavesFinished); //$NON-NLS-1$
