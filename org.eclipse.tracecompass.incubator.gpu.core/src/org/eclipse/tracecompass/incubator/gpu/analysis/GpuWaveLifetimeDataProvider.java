@@ -15,7 +15,6 @@ import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.tracecompass.internal.tmf.core.model.tree.AbstractTreeDataProvider;
 import org.eclipse.tracecompass.statesystem.core.ITmfStateSystem;
-import org.eclipse.tracecompass.statesystem.core.exceptions.AttributeNotFoundException;
 import org.eclipse.tracecompass.statesystem.core.exceptions.StateSystemDisposedException;
 import org.eclipse.tracecompass.statesystem.core.exceptions.TimeRangeException;
 import org.eclipse.tracecompass.statesystem.core.interval.ITmfStateInterval;
@@ -40,7 +39,7 @@ import org.eclipse.tracecompass.tmf.core.trace.TmfTraceUtils;
  * @author Sébastien Darche <sebastien.darche@polymtl.ca>
  *
  */
-public class GpuWaveLifetimeDataProvider extends AbstractTreeDataProvider<@NonNull GpuWaveStateAnalysis, @NonNull TmfTreeDataModel> implements ITmfTreeXYDataProvider<TmfTreeDataModel> {
+public class GpuWaveLifetimeDataProvider extends AbstractTreeDataProvider<@NonNull GpuWaveStateAnalysis, @NonNull TmfTreeDataModel> implements ITmfTreeXYDataProvider<@NonNull TmfTreeDataModel> {
 
     /**
      * @brief Data provider ID
@@ -87,13 +86,6 @@ public class GpuWaveLifetimeDataProvider extends AbstractTreeDataProvider<@NonNu
 
         if (ss == null) {
             return new TmfModelResponse<>(null, ITmfResponse.Status.FAILED, CommonStatusMessage.ANALYSIS_INITIALIZATION_FAILED);
-        }
-
-        int wavesQuark;
-        try {
-            wavesQuark = ss.getQuarkAbsolute("waves"); //$NON-NLS-1$
-        } catch (AttributeNotFoundException e1) {
-            return new TmfModelResponse<>(null, Status.FAILED, CommonStatusMessage.STATE_SYSTEM_FAILED);
         }
 
         // ----- Sampling time ----- //
