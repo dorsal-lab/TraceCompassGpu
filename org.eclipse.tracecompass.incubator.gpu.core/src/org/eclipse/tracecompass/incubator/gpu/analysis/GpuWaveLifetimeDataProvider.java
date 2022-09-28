@@ -3,9 +3,11 @@
  */
 package org.eclipse.tracecompass.incubator.gpu.analysis;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
@@ -17,6 +19,7 @@ import org.eclipse.tracecompass.statesystem.core.exceptions.AttributeNotFoundExc
 import org.eclipse.tracecompass.statesystem.core.exceptions.StateSystemDisposedException;
 import org.eclipse.tracecompass.statesystem.core.exceptions.TimeRangeException;
 import org.eclipse.tracecompass.statesystem.core.interval.ITmfStateInterval;
+import org.eclipse.tracecompass.tmf.core.event.ITmfEventField;
 import org.eclipse.tracecompass.tmf.core.model.CommonStatusMessage;
 import org.eclipse.tracecompass.tmf.core.model.TmfCommonXAxisModel;
 import org.eclipse.tracecompass.tmf.core.model.YModel;
@@ -119,52 +122,47 @@ public class GpuWaveLifetimeDataProvider extends AbstractTreeDataProvider<@NonNu
         double[] wavesActive = new double[size];
         double[] totalFlops = new double[size];
 
+        @SuppressWarnings("nls")
+        @NonNull
+        List<@NonNull Integer> contentQuarks = ss.getQuarks("waves", "*", "content");
+
         try {
-            int i = 0;
-            for (long time : times) {
-                List<@NonNull ITmfStateInterval> values = ss.queryFullState(time);
+            List<Long> timesList = Arrays.stream(times).boxed().collect(Collectors.toList());
+            Iterable<@NonNull ITmfStateInterval> intervals = ss.query2D(contentQuarks, timesList);
 
-                long finished = 0L;
-                long active = 0L;
-                double flops = 0.;
+            for (ITmfStateInterval interval : intervals) {
+                ITmfEventField event = (ITmfEventField) interval.getValue();
 
-                for (int wave : waves) {
-                    ITmfStateInterval interval = values.get(wave);
-                    Long bb = (Long) interval.getValue();
-
-                    ITmfStateInterval content = values.get(ss.getSubAttributes(wave, false).get(0));
-
-                    if (bb == null) {
-                        // Nothing to do, uninitialized
-                    } else if (bb != -1) {
-                        // Valid basic block, currently active
-                        ++active;
-
-                        // Compute active flops
-                        if (bb == 0) { // TEMPORARY, need to query basic block
-                                       // db (hip-analyzer report)
-
-                            // stampMemory interval represents how long we
-                            // stayed in the basic block
-                            double diff = ((double) content.getEndTime() - content.getStartTime()) / 1.e6;
-                            flops += 1 / diff; // #Flop / t (second)
-                        }
-
-                    } else {
-                        // bb == -1, by convention the wave is finished
-                        ++finished;
-                    }
+                if (event == null) {
+                    continue;
                 }
+                Long bb = (Long) event.getField("bb").getValue();
 
-                // gpuState.dump();
+                long currentTime = interval.getStartTime();
+                int i = (int) ((currentTime - begin) / SAMPLING_NS);
 
-                wavesFinished[i] = finished;
-                wavesActive[i] = active;
-                totalFlops[i] = flops;
+                if (bb == null) {
+                    // Nothing to do, uninitialized
+                } else if (bb != -1) {
+                    // Valid basic block, currently active
+                    ++wavesActive[i];
 
-                mon.worked(1);
-                ++i;
+                    // Compute active flops
+                    if (bb == 0) { // TEMPORARY, need to query basic block
+                                   // db (hip-analyzer report)
+
+                        // stampMemory interval represents how long we
+                        // stayed in the basic block
+                        double diff = ((double) interval.getEndTime() - interval.getStartTime()) / 1.e6;
+                        totalFlops[i] += 1 / diff; // #Flop / t (second)
+                    }
+
+                } else {
+                    // bb == -1, by convention the wave is finished
+                    ++wavesFinished[i];
+                }
             }
+
         } catch (IndexOutOfBoundsException | TimeRangeException | StateSystemDisposedException e) {
             return new TmfModelResponse<>(null,
                     ITmfResponse.Status.FAILED,
