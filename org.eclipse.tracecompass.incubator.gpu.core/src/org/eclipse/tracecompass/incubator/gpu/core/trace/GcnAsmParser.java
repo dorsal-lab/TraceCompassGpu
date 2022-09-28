@@ -53,6 +53,13 @@ public class GcnAsmParser {
         public long get() {
             return exec;
         }
+
+        /**
+         * @return Number of active threads
+         */
+        public int activeThreads() {
+            return Long.bitCount(exec);
+        }
     }
 
     /**

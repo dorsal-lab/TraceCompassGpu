@@ -70,7 +70,7 @@
       </dataProviderFactory>
       <dataProviderFactory
             class="org.eclipse.tracecompass.incubator.gpu.analysis.GpuBasicBlocksReportDataProviderFactory"
-            id="org.eclipse.tracecompass.incubator.gpu.analysis.GpuBasicBlocksReportDataProvider">
+            id="org.eclipse.tracecompass.incubator.gpu.analysis.GpuBasicBlocksDataProvider">
       </dataProviderFactory>
    </extension>
 
