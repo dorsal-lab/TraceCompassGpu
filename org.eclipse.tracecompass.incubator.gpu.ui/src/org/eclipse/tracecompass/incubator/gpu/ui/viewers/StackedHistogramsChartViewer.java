@@ -1,5 +1,6 @@
 package org.eclipse.tracecompass.incubator.gpu.ui.viewers;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -16,9 +17,15 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.swtchart.Chart;
 import org.eclipse.swtchart.IAxis;
+import org.eclipse.swtchart.IBarSeries;
 import org.eclipse.swtchart.ICustomPaintListener;
+import org.eclipse.swtchart.ILineSeries;
+import org.eclipse.swtchart.ISeriesSet;
+import org.eclipse.swtchart.model.DoubleArraySeriesModel;
+import org.eclipse.swtchart.ISeries.SeriesType;
 import org.eclipse.tracecompass.incubator.gpu.analysis.RooflineXYModel;
 import org.eclipse.tracecompass.tmf.core.dataprovider.DataProviderManager;
 import org.eclipse.tracecompass.tmf.core.model.xy.ISeriesModel;
@@ -39,6 +46,7 @@ public class StackedHistogramsChartViewer extends TmfXYChartViewer {
 
     private ScrolledComposite fScrolled;
     private Composite fContent;
+    private Chart[] currentCharts;
 
     /** The color scheme for the chart */
     private @NonNull TimeGraphColorScheme fColorScheme = new TimeGraphColorScheme();
@@ -61,8 +69,11 @@ public class StackedHistogramsChartViewer extends TmfXYChartViewer {
         gridData.exclude = true;
 
         fScrolled = new ScrolledComposite(fCommonComposite, SWT.V_SCROLL | SWT.BORDER);
-        fContent = new Composite(fScrolled, SWT.NONE);
+        fContent = new Composite(fCommonComposite, SWT.NONE);
         fContent.setBackground(fColorScheme.getColor(TimeGraphColorScheme.TOOL_BACKGROUND));
+
+        Label label = new Label(fCommonComposite, SWT.CENTER);
+        label.setText("Test???");
 
         StackLayout layout = new StackLayout();
         fContent.setLayout(layout);
@@ -117,7 +128,7 @@ public class StackedHistogramsChartViewer extends TmfXYChartViewer {
 
     @Override
     public Control getControl() {
-        return fScrolled;
+        return fContent;
     }
 
     private static void drawGridLines(GC gc, Chart swtChart) {
@@ -187,6 +198,15 @@ public class StackedHistogramsChartViewer extends TmfXYChartViewer {
 
     private void updateDisplay(ITmfXyModel model, IProgressMonitor monitor) {
         final ITmfXyModel seriesValues = model;
+
+        if (currentCharts != null) {
+            for (Chart c : currentCharts) {
+                if (c != null) {
+                    c.dispose();
+                }
+            }
+        }
+
         Display.getDefault().asyncExec(() -> {
             TmfXYAxisDescription xAxisDescription = null;
             TmfXYAxisDescription yAxisDescription = null;
@@ -195,9 +215,31 @@ public class StackedHistogramsChartViewer extends TmfXYChartViewer {
                 return;
             }
 
+            currentCharts = new Chart[seriesValues.getSeriesData().size()];
+
+            int i = 0;
             for (ISeriesModel entry : seriesValues.getSeriesData()) {
-                // TODO
+                Chart chart = createChart();
+                ISeriesSet seriesSet = chart.getSeriesSet();
+
+                IBarSeries<Integer> series = (IBarSeries<Integer>) seriesSet.createSeries(SeriesType.BAR, entry.getName());
+                series.setDataModel(new DoubleArraySeriesModel(Arrays.stream(entry.getXAxis()).mapToDouble((x) -> x).toArray(), entry.getData()));
+
+                if (xAxisDescription == null) {
+                    xAxisDescription = entry.getXAxisDescription();
+                }
+                if (yAxisDescription == null) {
+                    yAxisDescription = entry.getYAxisDescription();
+                }
+
+                chart.redraw();
+                currentCharts[i] = chart;
+
+                ++i;
             }
+
+            fContent.layout();
+            /* fScrolled.layout(); */
         });
     }
 
