@@ -13,6 +13,7 @@ import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Layout;
 import org.eclipse.tracecompass.tmf.core.trace.ITmfTrace;
 import org.eclipse.tracecompass.tmf.core.trace.TmfTraceManager;
@@ -160,6 +161,20 @@ public abstract class GenericGpuChartView extends TmfView implements ITmfAllowMu
      */
     static protected Control emptyControl(Composite parent) {
         return new Composite(parent, SWT.NONE);
+    }
+
+    /**
+     * Returns the current or default display.
+     *
+     * @return the current or default display
+     */
+    protected static Display getDisplay() {
+        Display display = Display.getCurrent();
+        // may be null if outside the UI thread
+        if (display == null) {
+            display = Display.getDefault();
+        }
+        return display;
     }
 
 }
