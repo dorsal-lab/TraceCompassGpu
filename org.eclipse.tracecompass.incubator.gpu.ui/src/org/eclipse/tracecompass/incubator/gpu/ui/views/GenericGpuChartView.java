@@ -10,6 +10,7 @@ import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.action.Separator;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
+import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
@@ -75,6 +76,7 @@ public abstract class GenericGpuChartView extends TmfView implements ITmfAllowMu
         fContentContainer.setLayout(contentLayout());
 
         fContent = createViewContent(fContentContainer);
+        fContent.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 
         fSashForm.setWeights(DEFAULT_WEIGHTS);
 

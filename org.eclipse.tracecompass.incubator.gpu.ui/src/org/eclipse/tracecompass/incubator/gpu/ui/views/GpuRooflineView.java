@@ -3,78 +3,165 @@
  */
 package org.eclipse.tracecompass.incubator.gpu.ui.views;
 
-import org.eclipse.tracecompass.incubator.gpu.analysis.GpuRooflineAnalysis;
-import org.eclipse.tracecompass.incubator.gpu.analysis.GpuRooflineAnalysisDataProvider;
-import org.eclipse.tracecompass.incubator.gpu.ui.viewers.RooflineChartViewer;
-import org.eclipse.tracecompass.tmf.ui.viewers.TmfViewer;
-import org.eclipse.tracecompass.tmf.ui.viewers.tree.AbstractSelectTreeViewer2;
-import org.eclipse.tracecompass.tmf.ui.viewers.tree.ITmfTreeColumnDataProvider;
-import org.eclipse.tracecompass.tmf.ui.viewers.tree.TmfTreeColumnData;
-import org.eclipse.tracecompass.tmf.ui.viewers.tree.TmfTreeViewerEntry;
-import org.eclipse.tracecompass.tmf.ui.viewers.xychart.TmfXYChartViewer;
-import org.eclipse.tracecompass.tmf.ui.views.xychart.TmfChartView;
-import com.google.common.collect.ImmutableList;
-import java.util.Comparator;
-import java.util.Objects;
-
+import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.annotation.NonNull;
-import org.eclipse.jdt.annotation.Nullable;
-import org.eclipse.swt.widgets.*;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.PaintEvent;
+import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swtchart.Chart;
+import org.eclipse.swtchart.IAxis;
+import org.eclipse.swtchart.ICustomPaintListener;
+import org.eclipse.swtchart.ILineSeries;
+import org.eclipse.swtchart.ISeriesSet;
+import org.eclipse.swtchart.LineStyle;
+import org.eclipse.swtchart.Range;
+import org.eclipse.swtchart.ILineSeries.PlotSymbolType;
+import org.eclipse.swtchart.ISeries.SeriesType;
+import org.eclipse.swtchart.model.DoubleArraySeriesModel;
+import org.eclipse.tracecompass.incubator.gpu.analysis.GpuRooflineAnalysisDataProvider;
+import org.eclipse.tracecompass.incubator.gpu.analysis.RooflineXYModel;
+import org.eclipse.tracecompass.tmf.core.model.xy.ISeriesModel;
+import org.eclipse.tracecompass.tmf.core.model.xy.ITmfXyModel;
+import org.eclipse.tracecompass.tmf.core.model.xy.TmfXYAxisDescription;
+import org.eclipse.tracecompass.tmf.core.model.xy.ISeriesModel.DisplayType;
+import org.eclipse.tracecompass.tmf.ui.widgets.timegraph.widgets.TimeGraphColorScheme;
 
 /**
  * @author Sébastien Darche <sebastien.darche@polymtl.ca>
  *
  */
-public class GpuRooflineView extends TmfChartView {
+public class GpuRooflineView extends AbstractDataProviderClientView {
 
-    private static final String CHART_NAME = "Roofline model"; //$NON-NLS-1$
+    private Chart fSwtChart;
 
-    private static final String VIEW_ID = GpuRooflineAnalysis.ROOFLINE_VIEW_ID;
+    private static final String VIEW = "GPU Roofline"; //$NON-NLS-1$
 
-    /**
-     * @brief Defaut constructor
-     */
+    /** The color scheme for the chart */
+    private @NonNull TimeGraphColorScheme fColorScheme = new TimeGraphColorScheme();
+
     public GpuRooflineView() {
-        super(VIEW_ID);
-    }
-
-    /**
-     * @param viewName
-     *            View name
-     */
-    public GpuRooflineView(String viewName) {
-        super(viewName);
+        super(VIEW, GpuRooflineAnalysisDataProvider.ID);
     }
 
     @Override
-    protected TmfXYChartViewer createChartViewer(Composite parent) {
-        TmfXYChartViewer chartViewer = new RooflineChartViewer(parent, "", GpuRooflineAnalysisDataProvider.ID); //$NON-NLS-1$
+    protected void updateDisplay(ITmfXyModel model, IProgressMonitor monitor) {
+        final ITmfXyModel seriesValues = model;
+        Display.getDefault().asyncExec(() -> {
+            TmfXYAxisDescription xAxisDescription = null;
+            TmfXYAxisDescription yAxisDescription = null;
 
-        Chart chart = chartViewer.getSwtChart();
+            if (fSwtChart.isDisposed()) {
+                return;
+            }
+            if (monitor != null && monitor.isCanceled()) {
+                return;
+            }
+            ISeriesSet seriesSet = fSwtChart.getSeriesSet();
 
-        // Set title
+            for (ISeriesModel entry : seriesValues.getSeriesData()) {
 
-        chart.getTitle().setText(CHART_NAME);
+                ILineSeries<Integer> series = (ILineSeries<Integer>) seriesSet.createSeries(SeriesType.LINE, entry.getName());
 
-        return chartViewer;
-    }
+                series.setDataModel(new DoubleArraySeriesModel(
+                        RooflineXYModel.fromFixedPointArray(entry.getXAxis()),
+                        entry.getData()));
 
-    private static final class TreeViewer extends AbstractSelectTreeViewer2 {
-        public TreeViewer(Composite parent) {
-            super(parent, 1, GpuRooflineAnalysisDataProvider.ID);
-        }
+                if (entry.getDisplayType() == DisplayType.SCATTER) {
+                    series.setLineStyle(LineStyle.NONE);
+                    series.setSymbolType(PlotSymbolType.SQUARE);
+                    series.setSymbolSize(8);
+                }
 
-        @Override
-        protected ITmfTreeColumnDataProvider getColumnDataProvider() {
-            return () -> ImmutableList.of(createColumn("Name", Comparator.comparing(TmfTreeViewerEntry::getName)), //$NON-NLS-1$
-                    new TmfTreeColumnData("Legend")); //$NON-NLS-1$
-        }
+                // Get the x and y data types
+                if (xAxisDescription == null) {
+                    xAxisDescription = entry.getXAxisDescription();
+                }
+                if (yAxisDescription == null) {
+                    yAxisDescription = entry.getYAxisDescription();
+                }
+            }
+
+            IAxis xAxis = fSwtChart.getAxisSet().getXAxis(0);
+            xAxis.enableLogScale(true);
+            xAxis.setRange(new Range(RooflineXYModel.ROOFLINE_X_MIN, RooflineXYModel.ROOFLINE_X_MAX));
+
+            IAxis yAxis = fSwtChart.getAxisSet().getYAxis(0);
+            yAxis.enableLogScale(true);
+            yAxis.setRange(new Range(RooflineXYModel.ROOFLINE_Y_MIN, RooflineXYModel.ROOFLINE_Y_MAX));
+
+            fSwtChart.redraw();
+        });
+
     }
 
     @Override
-    protected @NonNull TmfViewer createLeftChildViewer(@Nullable Composite parent) {
-        return new TreeViewer(Objects.requireNonNull(parent));
+    protected Control createViewContent(Composite parent) {
+        fSwtChart = new Chart(parent, SWT.NONE);
+        fSwtChart.getPlotArea().addCustomPaintListener(new ICustomPaintListener() {
+
+            @Override
+            public void paintControl(PaintEvent e) {
+                drawGridLines(e.gc);
+            }
+
+            @Override
+            public boolean drawBehindSeries() {
+                return true;
+            }
+        });
+
+        Color backgroundColor = fColorScheme.getColor(TimeGraphColorScheme.TOOL_BACKGROUND);
+        fSwtChart.setBackground(backgroundColor);
+        backgroundColor = fColorScheme.getColor(TimeGraphColorScheme.BACKGROUND);
+        fSwtChart.getPlotArea().setBackground(backgroundColor);
+        fSwtChart.setForeground(fColorScheme.getColor(TimeGraphColorScheme.TOOL_FOREGROUND));
+
+        fSwtChart.getTitle().setForeground(fColorScheme.getColor(TimeGraphColorScheme.TOOL_FOREGROUND));
+
+        IAxis xAxis = fSwtChart.getAxisSet().getXAxis(0);
+        xAxis.getTitle().setForeground(fColorScheme.getColor(TimeGraphColorScheme.TOOL_FOREGROUND));
+        xAxis.getTick().setForeground(fColorScheme.getColor(TimeGraphColorScheme.TOOL_FOREGROUND));
+        xAxis.getTitle().setText(RooflineXYModel.ROOFLINE_XAXIS_NAME);
+        xAxis.enableLogScale(true);
+
+        IAxis yAxis = fSwtChart.getAxisSet().getYAxis(0);
+        yAxis.getTitle().setForeground(fColorScheme.getColor(TimeGraphColorScheme.TOOL_FOREGROUND));
+        yAxis.getTick().setForeground(fColorScheme.getColor(TimeGraphColorScheme.TOOL_FOREGROUND));
+        yAxis.getTitle().setText(RooflineXYModel.ROOFLINE_YAXIS_NAME);
+        yAxis.enableLogScale(true);
+
+        return fSwtChart;
+    }
+
+    private void drawGridLines(GC gc) {
+        // Point size = fSwtChart.getPlotArea().getSize();
+        Color foreground = fSwtChart.getAxisSet().getXAxis(0).getGrid().getForeground();
+        gc.setForeground(foreground);
+        gc.setAlpha(foreground.getAlpha());
+        gc.setLineStyle(SWT.LINE_DOT);
+
+        gc.setAlpha(255);
+    }
+
+    @Override
+    protected Control createViewNavigator(Composite parent) {
+        return new Composite(parent, SWT.NONE);
+    }
+
+    @Override
+    protected void zoomOut() {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    protected void zoomIn() {
+        // TODO Auto-generated method stub
+
     }
 
 }

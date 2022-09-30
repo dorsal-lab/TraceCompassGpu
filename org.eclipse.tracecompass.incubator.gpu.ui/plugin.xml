@@ -38,13 +38,6 @@
          point="org.eclipse.ui.views">
       <view
             category="org.eclipse.linuxtools.tmf.ui.views.category"
-            class="org.eclipse.tracecompass.incubator.gpu.ui.views.GpuRooflineView"
-            id="org.eclipse.tracecompass.incubator.gpu.ui.roofline"
-            name="GPU Roofline"
-            restorable="true">
-      </view>
-      <view
-            category="org.eclipse.linuxtools.tmf.ui.views.category"
             class="org.eclipse.tracecompass.incubator.gpu.ui.views.GpuWaveCumulatedView"
             id="org.eclipse.tracecompass.incubator.gpu.ui.gpuwavecumulatedview"
             name="GPU Cumulated waves view"
@@ -62,6 +55,13 @@
             class="org.eclipse.tracecompass.incubator.gpu.ui.views.GpuBasicBlockReportView"
             id="org.eclipse.tracecompass.incubator.gpu.ui.gpubasicblockreportview"
             name="GPU Basic Block report"
+            restorable="true">
+      </view>
+      <view
+            category="org.eclipse.linuxtools.tmf.ui.views.category"
+            class="org.eclipse.tracecompass.incubator.gpu.ui.views.GpuRooflineView"
+            id="org.eclipse.tracecompass.incubator.gpu.ui.roofline"
+            name="GPU Roofline"
             restorable="true">
       </view>
    </extension>

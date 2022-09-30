@@ -6,8 +6,6 @@ import java.util.Map;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.annotation.NonNull;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
 import org.eclipse.tracecompass.tmf.core.dataprovider.DataProviderManager;
 import org.eclipse.tracecompass.tmf.core.model.xy.ITmfTreeXYDataProvider;
 import org.eclipse.tracecompass.tmf.core.model.xy.ITmfXYDataProvider;
@@ -21,12 +19,14 @@ public abstract class AbstractDataProviderClientView extends GenericGpuChartView
 
     private UpdateThread fUpdateThread;
     private ITmfTrace fTrace;
+    private final String fId;
 
     /** Timeout between updates in the updateData thread **/
     private static final long BUILD_UPDATE_TIMEOUT = 500;
 
-    public AbstractDataProviderClientView(String viewName) {
+    public AbstractDataProviderClientView(String viewName, String dataProviderId) {
         super(viewName);
+        fId = dataProviderId;
     }
 
     @Override
