@@ -95,6 +95,7 @@ public class GpuBasicBlockReportView extends AbstractDataProviderClientView {
                     yAxisDescription = entry.getYAxisDescription();
                 }
 
+                chart.getAxisSet().adjustRange();
                 chart.redraw();
                 currentCharts[i] = chart;
 
