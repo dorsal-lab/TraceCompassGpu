@@ -64,6 +64,13 @@
             name="GPU Roofline"
             restorable="true">
       </view>
+      <view
+            category="org.eclipse.linuxtools.tmf.ui.views.category"
+            class="org.eclipse.tracecompass.incubator.gpu.ui.views.GpuWaveEventExportView"
+            id="org.eclipse.tracecompass.incubator.gpu.ui.GpuWaveEventExportView"
+            name="GPU Event Export view"
+            restorable="true">
+      </view>
    </extension>
    <extension
          point="org.eclipse.ui.handlers">

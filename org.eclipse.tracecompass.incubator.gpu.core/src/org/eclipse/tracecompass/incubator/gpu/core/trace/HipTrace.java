@@ -586,6 +586,8 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
 
         long pos = offset;
 
+        boolean empty = true;
+
         for (EventsHeader.Field f : header.fields) {
             try {
                 if (currentOffset() + f.size > bufferEnd()) {
@@ -598,7 +600,11 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
             ArrayList<Byte> bytes = new ArrayList<>();
 
             for (int index = 0; index < f.size; ++index) {
-                bytes.add(fMappedByteBuffer.get());
+                Byte b = fMappedByteBuffer.get();
+                bytes.add(b);
+                if (b.byteValue() != 0) {
+                    empty = false;
+                }
             }
 
             // Attempt to convert to the appropriate type
@@ -612,6 +618,9 @@ public class HipTrace extends TmfTrace implements ITmfTraceKnownSize {
 
         long eventOffset = offset - header.headerPos - header.offsetsSize();
 
+        /*if (empty) {
+            return null;
+        }*/
         return (TmfEvent) HipAnalyzerEvent.parse(this, rank, eventOffset, header, data);
     }
 
