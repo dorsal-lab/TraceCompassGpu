@@ -92,7 +92,7 @@ public class GpuWaveEventExporter extends AbstractTreeDataProvider<@NonNull GpuW
         }
 
         try {
-            writer.write("gpu_stamp,block,wave,exec,duration\n"); //$NON-NLS-1$
+            writer.write("gpu_stamp,bb,block,wave,exec,duration\n"); //$NON-NLS-1$
         } catch (IOException e2) {
         }
 
@@ -123,6 +123,7 @@ public class GpuWaveEventExporter extends AbstractTreeDataProvider<@NonNull GpuW
                 long duration = interval.getEndTime() - interval.getStartTime();
 
                 writer.write(new StringBuilder().append(event.getField("stamp").getValue()).append(',')
+                        .append(bb).append(',')
                         .append(producer.getField("block").getValue()).append(',')
                         .append(producer.getField("wave").getValue()).append(',')
                         .append(exec.get()).append(',')

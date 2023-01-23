@@ -26,7 +26,7 @@ public class GpuWaveStateProvider extends AbstractTmfStateProvider {
     private static int DEFAULT_QUARK = -1;
     private int activeWavesQuark = DEFAULT_QUARK;
 
-    private class StoredQuarks {
+    public class StoredQuarks {
         private int waveQuark;
         private int valueQuark;
 
