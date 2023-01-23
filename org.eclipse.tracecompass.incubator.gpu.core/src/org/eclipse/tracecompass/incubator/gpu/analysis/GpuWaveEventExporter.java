@@ -42,6 +42,7 @@ public class GpuWaveEventExporter extends AbstractTreeDataProvider<@NonNull GpuW
      * @brief Default output file
      */
     public static final String DEFAULT_FILE = "/tmp/trace_output.csv"; //$NON-NLS-1$
+
     /**
      * @param trace
      *            Trace

@@ -53,6 +53,17 @@
                id="org.eclipse.tracecompass.incubator.gpu.core.trace.HipTrace">
          </tracetype>
       </module>
+      <module
+            analysis_module="org.eclipse.tracecompass.incubator.gpu.analysis.GpuTripCountAnalysis"
+            automatic="false"
+            id="org.eclipse.tracecompass.incubator.gpu.core.GpuTripCountAnalysis"
+            name="GPU Trip count analysis">
+         <tracetype
+               applies="true"
+               class="org.eclipse.tracecompass.incubator.gpu.core.trace.HipTrace"
+               id="org.eclipse.tracecompass.incubator.gpu.core.trace.HipTrace">
+         </tracetype>
+      </module>
    </extension>
    <extension
          point="org.eclipse.tracecompass.tmf.core.dataprovider">
