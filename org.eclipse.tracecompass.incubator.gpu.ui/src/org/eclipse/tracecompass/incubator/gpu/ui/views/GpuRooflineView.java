@@ -134,6 +134,8 @@ public class GpuRooflineView extends AbstractDataProviderClientView {
         yAxis.getTitle().setText(RooflineXYModel.ROOFLINE_YAXIS_NAME);
         yAxis.enableLogScale(true);
 
+        fSwtChart.getTitle().setText(VIEW);
+
         return fSwtChart;
     }
 
