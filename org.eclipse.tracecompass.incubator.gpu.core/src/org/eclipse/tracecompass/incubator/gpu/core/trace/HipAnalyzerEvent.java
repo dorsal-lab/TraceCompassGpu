@@ -220,10 +220,10 @@ public class HipAnalyzerEvent {
 
         @Override
         public ITmfEvent toEvent() {
-            long bb = (long) events.get(0).value;
-            long stamp = (long) events.get(1).value;
-            long exec = (long) events.get(2).value;
-            long hw_id = (long) events.get(3).value;
+            long stamp = (long) events.get(0).value;
+            long exec = (long) events.get(1).value;
+            long hw_id = (long) events.get(2).value;
+            long bb = (long) events.get(3).value;
 
             @SuppressWarnings("nls")
             final TmfEventField[] eventsFields = {
